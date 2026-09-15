@@ -949,9 +949,61 @@ export class FlightHUD {
     const timeEl = this.finishBannerEl.querySelector('#podium-time-text');
     const shotsEl = this.finishBannerEl.querySelector('#podium-shots-text');
     const killsEl = this.finishBannerEl.querySelector('#podium-kills-text');
+    const cardEl = this.finishBannerEl.querySelector('.podium-modal-card') as HTMLElement;
+    const restartBtn = this.finishBannerEl.querySelector('#podium-restart-btn') as HTMLElement;
+    const titleEl = this.finishBannerEl.querySelector('.podium-modal-card > div:first-child') as HTMLElement;
 
-    const rankNames = ['1ST PLACE - GOLD CUP', '2ND PLACE - SILVER', '3RD PLACE - BRONZE', '4TH PLACE'];
-    if (rankEl) rankEl.textContent = rankNames[stats.rank - 1] || `${stats.rank}TH PLACE`;
+    const rankThemes = [
+      {
+        title: 'VICTORY - GOLD CUP',
+        rankText: '1ST PLACE',
+        primaryColor: '#ffd700',
+        glowColor: 'rgba(255, 215, 0, 0.65)',
+        btnGradient: 'linear-gradient(90deg, #ffd700, #ff8800)',
+      },
+      {
+        title: 'PODIUM - SILVER CUP',
+        rankText: '2ND PLACE',
+        primaryColor: '#e2e8f0',
+        glowColor: 'rgba(226, 232, 240, 0.6)',
+        btnGradient: 'linear-gradient(90deg, #cbd5e1, #64748b)',
+      },
+      {
+        title: 'PODIUM - BRONZE CUP',
+        rankText: '3RD PLACE',
+        primaryColor: '#cd7f32',
+        glowColor: 'rgba(205, 127, 50, 0.6)',
+        btnGradient: 'linear-gradient(90deg, #cd7f32, #b45309)',
+      },
+      {
+        title: 'RACE COMPLETE',
+        rankText: '4TH PLACE',
+        primaryColor: '#94a3b8',
+        glowColor: 'rgba(148, 163, 184, 0.4)',
+        btnGradient: 'linear-gradient(90deg, #475569, #1e293b)',
+      },
+    ];
+
+    const currentTheme = rankThemes[stats.rank - 1] || rankThemes[3];
+
+    if (rankEl) {
+      rankEl.textContent = currentTheme.rankText;
+      (rankEl as HTMLElement).style.textShadow = `0 0 24px ${currentTheme.glowColor}`;
+    }
+    if (titleEl) {
+      titleEl.textContent = currentTheme.title;
+      titleEl.style.color = currentTheme.primaryColor;
+    }
+    if (cardEl) {
+      cardEl.style.borderColor = currentTheme.primaryColor;
+      cardEl.style.boxShadow = `0 0 60px ${currentTheme.glowColor}, inset 0 0 24px rgba(0, 0, 0, 0.4)`;
+    }
+    if (restartBtn) {
+      restartBtn.style.background = currentTheme.btnGradient;
+      restartBtn.style.boxShadow = `0 0 24px ${currentTheme.glowColor}`;
+      restartBtn.style.color = stats.rank <= 2 ? '#050a14' : '#ffffff';
+    }
+
     if (timeEl) timeEl.textContent = `FINAL TIME: ${stats.totalTime}`;
     if (shotsEl) shotsEl.textContent = stats.shotsFired.toString();
     if (killsEl) killsEl.textContent = stats.asteroidsDestroyed.toString();

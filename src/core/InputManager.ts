@@ -22,6 +22,10 @@ export class InputManager {
   public activeMode: InputMode = 'Keyboard & Mouse';
   public onModeChange?: (mode: InputMode) => void;
 
+  // Pitch Axis Dynamics (Standard Arcade vs. Flight Sim)
+  public isPitchInverted: boolean = false;
+  public onPitchInversionChange?: (inverted: boolean) => void;
+
   // Keyboard state
   private keysDown: Set<string> = new Set();
 
@@ -58,10 +62,30 @@ export class InputManager {
   private readonly STICK_MAX_RADIUS = 50;
 
   constructor() {
+    // Load persisted pitch dynamics preference (defaults to false / Standard Arcade)
+    try {
+      const savedInversion = localStorage.getItem('hyperion_pitch_inverted');
+      if (savedInversion !== null) {
+        this.isPitchInverted = savedInversion === 'true';
+      }
+    } catch {
+      this.isPitchInverted = false;
+    }
+
     this.initKeyboardListeners();
     this.initMouseListeners();
     this.initTouchUI();
     this.checkGyroCapability();
+  }
+
+  public setPitchInverted(inverted: boolean): void {
+    this.isPitchInverted = inverted;
+    try {
+      localStorage.setItem('hyperion_pitch_inverted', inverted.toString());
+    } catch (e) {
+      console.warn('Could not save pitch inverted setting to localStorage', e);
+    }
+    this.onPitchInversionChange?.(inverted);
   }
 
   // -------------------------------------------------------------
@@ -457,16 +481,16 @@ export class InputManager {
   }
 
   public update(): InputState {
-    let pitch = 0;
+    let arcadePitch = 0;
     let yaw = 0;
     let roll = 0;
     let throttle = 0;
     let boost = false;
     let fire = false;
 
-    // 1. Keyboard Inputs
-    if (this.keysDown.has('KeyW') || this.keysDown.has('ArrowUp')) pitch -= 1;
-    if (this.keysDown.has('KeyS') || this.keysDown.has('ArrowDown')) pitch += 1;
+    // 1. Keyboard Inputs (Standard Arcade: W / Up = Pitch Up (+1), S / Down = Pitch Down (-1))
+    if (this.keysDown.has('KeyW') || this.keysDown.has('ArrowUp')) arcadePitch += 1;
+    if (this.keysDown.has('KeyS') || this.keysDown.has('ArrowDown')) arcadePitch -= 1;
     if (this.keysDown.has('KeyA') || this.keysDown.has('ArrowLeft')) yaw -= 1;
     if (this.keysDown.has('KeyD') || this.keysDown.has('ArrowRight')) yaw += 1;
     if (this.keysDown.has('KeyQ')) roll -= 1;
@@ -475,22 +499,22 @@ export class InputManager {
     if (this.keysDown.has('KeyF')) fire = true;
     if (this.keysDown.has('ShiftLeft') || this.keysDown.has('ShiftRight')) throttle -= 1;
 
-    // 2. Mouse Steering & Firing Inputs
+    // 2. Mouse Steering & Firing Inputs (Dragging mouse UP has pointerPos.y < 0 -> Pitch Up (+1))
     if (this.isPointerDown) {
       yaw += this.pointerPos.x;
-      pitch += this.pointerPos.y;
+      arcadePitch -= this.pointerPos.y;
     }
     if (this.isPointerFiring) {
       fire = true;
     }
 
-    // 3. Touch Stick Inputs
+    // 3. Touch Stick Inputs (Pushing stick UP has stickVector.y < 0 -> Pitch Up (+1))
     if (this.stickActive) {
       yaw += this.stickVector.x;
-      pitch += this.stickVector.y;
+      arcadePitch -= this.stickVector.y;
     }
 
-    // 4. Gyro / Tilt Inputs
+    // 4. Gyro / Tilt Inputs (Tilting phone back pitches UP (+1))
     if (this.isGyroActive) {
       const deltaBeta = this.currentBeta - this.neutralBeta;
       const deltaGamma = this.currentGamma - this.neutralGamma;
@@ -498,7 +522,7 @@ export class InputManager {
       const pitchFactor = Math.min(Math.max(deltaBeta / 25, -1), 1);
       const rollFactor = Math.min(Math.max(deltaGamma / 25, -1), 1);
 
-      pitch += pitchFactor;
+      arcadePitch -= pitchFactor;
       roll += rollFactor;
       yaw += rollFactor * 0.6;
     }
@@ -511,7 +535,12 @@ export class InputManager {
       fire = true;
     }
 
-    this.state.pitch = Math.min(Math.max(pitch, -1), 1);
+    // Apply inversion dynamically:
+    // When isPitchInverted === false (Standard Arcade): Up = Pitch Up (+1), Down = Pitch Down (-1)
+    // When isPitchInverted === true (Flight Sim): Up = Pitch Down (-1), Down = Pitch Up (+1)
+    const finalPitch = this.isPitchInverted ? -arcadePitch : arcadePitch;
+
+    this.state.pitch = Math.min(Math.max(finalPitch, -1), 1);
     this.state.yaw = Math.min(Math.max(yaw, -1), 1);
     this.state.roll = Math.min(Math.max(roll, -1), 1);
     this.state.throttle = Math.min(Math.max(throttle, -1), 1);

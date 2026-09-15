@@ -1,4 +1,5 @@
 import { GameState } from '../core/GameState';
+import { InputManager } from '../core/InputManager';
 
 export interface MenuUICallbacks {
   onStartRace: (callsign: string) => void;
@@ -18,10 +19,12 @@ export class MenuUI {
 
   private gameState: GameState;
   private callbacks: MenuUICallbacks;
+  private inputManager?: InputManager;
 
-  constructor(gameState: GameState, callbacks: MenuUICallbacks) {
+  constructor(gameState: GameState, callbacks: MenuUICallbacks, inputManager?: InputManager) {
     this.gameState = gameState;
     this.callbacks = callbacks;
+    this.inputManager = inputManager;
 
     this.container = document.createElement('div');
     this.container.id = 'menu-ui-root';
@@ -100,6 +103,15 @@ export class MenuUI {
         <div class="pause-badge">TACTICAL SYSTEM PAUSED</div>
         <h2 class="pause-heading">MISSION SUSPENDED</h2>
         <p class="subtitle-text">ORBITAL TIME &amp; TELEMETRY TEMPORARILY FROZEN</p>
+
+        <!-- Pitch Axis Setting in Pause Menu -->
+        <div class="pause-settings-card" style="margin: 16px 0; padding: 12px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 187, 0, 0.35); border-radius: 14px; text-align: left;">
+          <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #fbbf24; text-transform: uppercase; margin-bottom: 8px;">PITCH AXIS DYNAMICS</div>
+          <div class="pitch-toggle-group" style="display: flex; gap: 8px; background: rgba(8, 14, 28, 0.85); padding: 4px; border-radius: 10px; border: 1px solid rgba(255, 187, 0, 0.25);">
+            <button id="btn-pause-pitch-arcade" style="flex: 1; padding: 9px 8px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">ARCADE</button>
+            <button id="btn-pause-pitch-sim" style="flex: 1; padding: 9px 8px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">FLIGHT SIM</button>
+          </div>
+        </div>
 
         <div class="btn-group pause-btn-stack">
           <button id="btn-resume-race" class="btn-primary">
@@ -486,6 +498,20 @@ export class MenuUI {
       this.callbacks.onQuitToTitle();
     });
 
+    // PAUSE MENU - Pitch Axis Toggle Buttons
+    const btnPauseArcade = this.pauseOverlay.querySelector('#btn-pause-pitch-arcade') as HTMLButtonElement;
+    const btnPauseSim = this.pauseOverlay.querySelector('#btn-pause-pitch-sim') as HTMLButtonElement;
+
+    btnPauseArcade?.addEventListener('click', () => {
+      this.inputManager?.setPitchInverted(false);
+      this.updatePausePitchToggle();
+    });
+
+    btnPauseSim?.addEventListener('click', () => {
+      this.inputManager?.setPitchInverted(true);
+      this.updatePausePitchToggle();
+    });
+
     // Keyboard shortcut (Escape or 'P') to toggle pause
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
@@ -496,6 +522,38 @@ export class MenuUI {
         }
       }
     });
+  }
+
+  private updatePausePitchToggle(): void {
+    const isInverted = this.inputManager ? this.inputManager.isPitchInverted : false;
+    const btnPauseArcade = this.pauseOverlay.querySelector('#btn-pause-pitch-arcade') as HTMLButtonElement;
+    const btnPauseSim = this.pauseOverlay.querySelector('#btn-pause-pitch-sim') as HTMLButtonElement;
+
+    if (btnPauseArcade && btnPauseSim) {
+      if (!isInverted) {
+        // Arcade active: glowing cyan border & background
+        btnPauseArcade.style.borderColor = '#00f0ff';
+        btnPauseArcade.style.background = 'rgba(0, 240, 255, 0.22)';
+        btnPauseArcade.style.color = '#ffffff';
+        btnPauseArcade.style.boxShadow = '0 0 14px rgba(0, 240, 255, 0.5)';
+
+        btnPauseSim.style.borderColor = 'transparent';
+        btnPauseSim.style.background = 'transparent';
+        btnPauseSim.style.color = '#64748b';
+        btnPauseSim.style.boxShadow = 'none';
+      } else {
+        // Flight Sim active: glowing cyan border & background
+        btnPauseSim.style.borderColor = '#00f0ff';
+        btnPauseSim.style.background = 'rgba(0, 240, 255, 0.22)';
+        btnPauseSim.style.color = '#ffffff';
+        btnPauseSim.style.boxShadow = '0 0 14px rgba(0, 240, 255, 0.5)';
+
+        btnPauseArcade.style.borderColor = 'transparent';
+        btnPauseArcade.style.background = 'transparent';
+        btnPauseArcade.style.color = '#64748b';
+        btnPauseArcade.style.boxShadow = 'none';
+      }
+    }
   }
 
   public syncState(state: string): void {
@@ -519,6 +577,7 @@ export class MenuUI {
       this.titleOverlay.style.display = 'none';
       this.pauseOverlay.style.display = 'flex';
       this.pauseBtn.style.display = 'none';
+      this.updatePausePitchToggle();
     } else if (state === 'PODIUM') {
       this.titleOverlay.style.display = 'none';
       this.pauseOverlay.style.display = 'none';

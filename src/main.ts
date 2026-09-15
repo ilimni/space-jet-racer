@@ -6,6 +6,7 @@ import { FlightController } from './core/FlightController';
 import { ChaseCamera } from './core/ChaseCamera';
 import { FlightHUD } from './ui/FlightHUD';
 import { Starfield } from './environment/Starfield';
+import { CelestialEnvironment } from './environment/CelestialEnvironment';
 import { TrackManager } from './environment/TrackManager';
 import { AsteroidField } from './environment/AsteroidField';
 import { HealthSystem } from './combat/HealthSystem';
@@ -34,6 +35,7 @@ hud.setInputMode(inputManager.activeMode);
 
 // 3. Initialize Environment & Track
 const starfield = new Starfield(engine.scene, engine.camera);
+const celestialEnvironment = new CelestialEnvironment(engine.scene, engine.camera);
 const trackManager = new TrackManager(engine.scene);
 const trackWaypoints = trackManager.rings.map((r) => r.position);
 
@@ -55,21 +57,24 @@ const aiConfigs: AIRivalConfig[] = [
     hullColor: 0x2e1065,
     accentColor: 0x9333ea,
     glowColor: 0xc084fc,
-    baseSpeed: 47.0,
+    baseSpeed: 53.0, // Balanced ace
+    archetype: 'ACE',
   },
   {
     name: 'Solar-02',
     hullColor: 0x78350f,
     accentColor: 0xf59e0b,
     glowColor: 0xfbbf24,
-    baseSpeed: 49.0,
+    baseSpeed: 56.0, // Fastest cruiser
+    archetype: 'SPEEDER',
   },
   {
     name: 'Viper-03',
     hullColor: 0x064e3b,
     accentColor: 0x10b981,
     glowColor: 0x34d399,
-    baseSpeed: 46.5,
+    baseSpeed: 50.0, // Aggressive brawler
+    archetype: 'BRAWLER',
   },
 ];
 
@@ -82,7 +87,7 @@ hud.initRivalMarkers(aiRivals);
 
 // 6. Initialize Race Director & Hangar Customizer
 const raceDirector = new RaceDirector();
-const hangarUI = new HangarUI(jet, gameState);
+const hangarUI = new HangarUI(jet, gameState, inputManager);
 
 // Technical Safeguard 2: AudioCtx resume across all audio subsystems
 const unlockAllAudio = () => {
@@ -139,7 +144,7 @@ const menuUI = new MenuUI(gameState, {
   onAudioUnlock: () => {
     unlockAllAudio();
   },
-});
+}, inputManager);
 
 hud.setPilotCallsign(menuUI.getPilotCallsign());
 
@@ -238,6 +243,7 @@ engine.onUpdate((dt, elapsedTime) => {
     // Update ambient visual effects without physics
     jet.update(dt, elapsedTime, false);
     starfield.update(jet.mesh.position, jet.mesh.quaternion, false, dt);
+    celestialEnvironment.update(dt, elapsedTime);
     trackManager.update(dt, elapsedTime);
     explosionFX.update(dt);
     hud.setVisible(false);
@@ -261,6 +267,7 @@ engine.onUpdate((dt, elapsedTime) => {
     chaseCamera.update(dt, false);
     jet.update(dt, elapsedTime, false);
     starfield.update(jet.mesh.position, jet.mesh.quaternion, false, dt);
+    celestialEnvironment.update(dt, elapsedTime);
     trackManager.update(dt, elapsedTime);
 
     const activeGatePos = trackManager.getActiveGatePosition();
@@ -278,6 +285,7 @@ engine.onUpdate((dt, elapsedTime) => {
     chaseCamera.update(dt, false);
     jet.update(dt, elapsedTime, false);
     starfield.update(jet.mesh.position, jet.mesh.quaternion, false, dt);
+    celestialEnvironment.update(dt, elapsedTime);
     trackManager.update(dt, elapsedTime);
     explosionFX.update(dt);
     return;
@@ -392,10 +400,14 @@ engine.onUpdate((dt, elapsedTime) => {
     }
   });
 
-  // 10. Update AI Rivals & Retaliation Firing
+  // 10. Real-Time Player Score & AI Rivals Update
+  const activeGatePos = trackManager.getActiveGatePosition();
+  const playerDistToNext = activeGatePos ? jet.mesh.position.distanceTo(activeGatePos) : 0;
+  const playerScore = trackManager.currentRingIndex * 10000 - playerDistToNext;
+
   for (let i = 0; i < aiRivals.length; i++) {
     const rival = aiRivals[i];
-    rival.update(dt, engine.camera);
+    rival.update(dt, engine.camera, playerScore, elapsedTime, jet.mesh.position);
 
     rival.checkRetaliation(
       jet.mesh.position,
@@ -407,14 +419,7 @@ engine.onUpdate((dt, elapsedTime) => {
   }
 
   // 11. Real-Time Race Standing Calculator (1st to 4th)
-  const activeGatePos = trackManager.getActiveGatePosition();
-  const playerDistToNext = activeGatePos ? jet.mesh.position.distanceTo(activeGatePos) : 0;
-  const playerScore = trackManager.currentRingIndex * 10000 - playerDistToNext;
-
-  const rivalScores = aiRivals.map((rival) => {
-    return rival.getCurrentWaypointIndex() * 10000 - rival.getDistanceToNextWaypoint();
-  });
-
+  const rivalScores = aiRivals.map((rival) => rival.getCourseScore());
   currentStanding = trackManager.calculateStandings(playerScore, rivalScores);
   hud.setStandings(currentStanding);
 
@@ -422,6 +427,7 @@ engine.onUpdate((dt, elapsedTime) => {
   jet.update(dt, elapsedTime, flightController.isBoosting);
   chaseCamera.update(dt, flightController.isBoosting);
   starfield.update(jet.mesh.position, jet.mesh.quaternion, flightController.isBoosting, dt);
+  celestialEnvironment.update(dt, elapsedTime);
   trackManager.update(dt, elapsedTime);
   explosionFX.update(dt);
 

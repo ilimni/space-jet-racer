@@ -1,10 +1,14 @@
 import { Jet } from '../entities/Jet';
 import { GameState } from '../core/GameState';
+import { InputManager } from '../core/InputManager';
 
 export class HangarUI {
   private container: HTMLDivElement;
   private jet: Jet;
   private gameState: GameState;
+  private inputManager?: InputManager;
+  private btnPitchArcade!: HTMLButtonElement;
+  private btnPitchSim!: HTMLButtonElement;
 
   private readonly HULL_PRESETS = [
     { label: 'Ceramic White', color: '#eef2f7' },
@@ -27,9 +31,10 @@ export class HangarUI {
     { label: 'Matrix Green', color: '#00ff66' },
   ];
 
-  constructor(jet: Jet, gameState: GameState) {
+  constructor(jet: Jet, gameState: GameState, inputManager?: InputManager) {
     this.jet = jet;
     this.gameState = gameState;
+    this.inputManager = inputManager;
     this.container = document.createElement('div');
     this.container.id = 'hangar-ui';
     this.initDOM();
@@ -39,8 +44,15 @@ export class HangarUI {
       this.container.style.display = newState === 'HANGAR' ? 'flex' : 'none';
       if (newState === 'HANGAR') {
         this.updateActiveSwatches();
+        this.updatePitchToggle();
       }
     });
+
+    if (this.inputManager) {
+      this.inputManager.onPitchInversionChange = () => {
+        this.updatePitchToggle();
+      };
+    }
   }
 
   private initDOM(): void {
@@ -131,6 +143,9 @@ export class HangarUI {
       this.jet.applyCustomization({ glowColor: col });
       this.updateActiveSwatches();
     }, 'glow'));
+
+    // 4. Flight Dynamics (Pitch Axis Toggle)
+    swatchesContainer.appendChild(this.createFlightDynamicsSection());
 
     sidePanel.appendChild(swatchesContainer);
 
@@ -239,9 +254,113 @@ export class HangarUI {
     });
   }
 
+  private createFlightDynamicsSection(): HTMLElement {
+    const box = document.createElement('div');
+
+    const titleEl = document.createElement('div');
+    titleEl.innerText = 'FLIGHT DYNAMICS';
+    Object.assign(titleEl.style, {
+      fontSize: '10px',
+      fontWeight: '800',
+      letterSpacing: '1.5px',
+      color: '#94a3b8',
+      marginBottom: '8px',
+      textTransform: 'uppercase',
+    });
+    box.appendChild(titleEl);
+
+    const toggleRow = document.createElement('div');
+    Object.assign(toggleRow.style, {
+      display: 'flex',
+      gap: '8px',
+      background: 'rgba(10, 16, 32, 0.65)',
+      padding: '4px',
+      borderRadius: '12px',
+      border: '1px solid rgba(0, 240, 255, 0.2)',
+    });
+
+    this.btnPitchArcade = document.createElement('button');
+    this.btnPitchArcade.id = 'hangar-pitch-arcade';
+    this.btnPitchArcade.innerText = 'PITCH AXIS: ARCADE';
+    Object.assign(this.btnPitchArcade.style, {
+      flex: '1',
+      padding: '10px 6px',
+      fontSize: '11px',
+      fontWeight: '800',
+      letterSpacing: '1px',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      transition: 'all 0.15s ease',
+      border: '1.5px solid transparent',
+      whiteSpace: 'nowrap',
+    });
+
+    this.btnPitchSim = document.createElement('button');
+    this.btnPitchSim.id = 'hangar-pitch-sim';
+    this.btnPitchSim.innerText = 'FLIGHT SIM';
+    Object.assign(this.btnPitchSim.style, {
+      flex: '1',
+      padding: '10px 6px',
+      fontSize: '11px',
+      fontWeight: '800',
+      letterSpacing: '1px',
+      borderRadius: '8px',
+      cursor: 'pointer',
+      transition: 'all 0.15s ease',
+      border: '1.5px solid transparent',
+      whiteSpace: 'nowrap',
+    });
+
+    this.btnPitchArcade.addEventListener('click', () => {
+      this.inputManager?.setPitchInverted(false);
+      this.updatePitchToggle();
+    });
+
+    this.btnPitchSim.addEventListener('click', () => {
+      this.inputManager?.setPitchInverted(true);
+      this.updatePitchToggle();
+    });
+
+    toggleRow.appendChild(this.btnPitchArcade);
+    toggleRow.appendChild(this.btnPitchSim);
+    box.appendChild(toggleRow);
+
+    return box;
+  }
+
+  private updatePitchToggle(): void {
+    const isInverted = this.inputManager ? this.inputManager.isPitchInverted : false;
+    if (this.btnPitchArcade && this.btnPitchSim) {
+      if (!isInverted) {
+        // Arcade active: glowing cyan border & background
+        this.btnPitchArcade.style.borderColor = '#00f0ff';
+        this.btnPitchArcade.style.background = 'rgba(0, 240, 255, 0.22)';
+        this.btnPitchArcade.style.color = '#ffffff';
+        this.btnPitchArcade.style.boxShadow = '0 0 14px rgba(0, 240, 255, 0.5)';
+
+        this.btnPitchSim.style.borderColor = 'transparent';
+        this.btnPitchSim.style.background = 'transparent';
+        this.btnPitchSim.style.color = '#64748b';
+        this.btnPitchSim.style.boxShadow = 'none';
+      } else {
+        // Flight Sim active: glowing cyan border & background
+        this.btnPitchSim.style.borderColor = '#00f0ff';
+        this.btnPitchSim.style.background = 'rgba(0, 240, 255, 0.22)';
+        this.btnPitchSim.style.color = '#ffffff';
+        this.btnPitchSim.style.boxShadow = '0 0 14px rgba(0, 240, 255, 0.5)';
+
+        this.btnPitchArcade.style.borderColor = 'transparent';
+        this.btnPitchArcade.style.background = 'transparent';
+        this.btnPitchArcade.style.color = '#64748b';
+        this.btnPitchArcade.style.boxShadow = 'none';
+      }
+    }
+  }
+
   public show(): void {
     this.container.style.display = 'flex';
     this.updateActiveSwatches();
+    this.updatePitchToggle();
   }
 
   public hide(): void {

@@ -8,6 +8,8 @@ export interface Asteroid {
   rotationSpeed: THREE.Vector3;
   hp: number;
   flashTimer: number;
+  baseEmissiveColor: number;
+  baseEmissiveIntensity: number;
 }
 
 export type LootType = 'HEART' | 'BOOST';
@@ -29,20 +31,17 @@ export class AsteroidField {
   private audioCtx: AudioContext | null = null;
   private explosionFX?: ExplosionFX;
 
-  // Base material for asteroids
-  private defaultAsteroidMaterial: THREE.MeshStandardMaterial;
+  // Cached crystalline vein procedural textures
+  private cyanVeinTexture: THREE.CanvasTexture;
+  private magentaVeinTexture: THREE.CanvasTexture;
 
   constructor(scene: THREE.Scene, trackWaypoints: THREE.Vector3[], explosionFX?: ExplosionFX) {
     this.scene = scene;
     this.explosionFX = explosionFX;
     this.initAudio();
 
-    this.defaultAsteroidMaterial = new THREE.MeshStandardMaterial({
-      color: 0x484238,
-      roughness: 0.88,
-      metalness: 0.12,
-      flatShading: true,
-    });
+    this.cyanVeinTexture = this.createCrystallineVeinTexture('#00e5ff');
+    this.magentaVeinTexture = this.createCrystallineVeinTexture('#ff0055');
 
     this.generateAsteroids(trackWaypoints);
   }
@@ -132,6 +131,58 @@ export class AsteroidField {
   }
 
   // -------------------------------------------------------------
+  // Procedural Crystalline Veins & Metallic Rock Textures
+  // -------------------------------------------------------------
+  private createCrystallineVeinTexture(veinColorHex: string): THREE.CanvasTexture {
+    const canvas = document.createElement('canvas');
+    canvas.width = 256;
+    canvas.height = 256;
+    const ctx = canvas.getContext('2d')!;
+
+    // Black base for emissiveMap
+    ctx.fillStyle = '#000000';
+    ctx.fillRect(0, 0, 256, 256);
+
+    // Draw branched luminous crystalline veins
+    ctx.strokeStyle = veinColorHex;
+    ctx.lineWidth = 3.0;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    for (let branch = 0; branch < 14; branch++) {
+      let x = Math.random() * 256;
+      let y = Math.random() * 256;
+      ctx.beginPath();
+      ctx.moveTo(x, y);
+      const steps = 5 + Math.floor(Math.random() * 6);
+      for (let s = 0; s < steps; s++) {
+        x += (Math.random() - 0.5) * 65;
+        y += (Math.random() - 0.5) * 65;
+        ctx.lineTo(x, y);
+      }
+      ctx.stroke();
+    }
+
+    // Glowing crystalline crystal clusters on nodes
+    for (let node = 0; node < 18; node++) {
+      const nx = Math.random() * 256;
+      const ny = Math.random() * 256;
+      const grad = ctx.createRadialGradient(nx, ny, 1, nx, ny, 8);
+      grad.addColorStop(0, veinColorHex);
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.arc(nx, ny, 8, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    const texture = new THREE.CanvasTexture(canvas);
+    texture.wrapS = THREE.RepeatWrapping;
+    texture.wrapT = THREE.RepeatWrapping;
+    return texture;
+  }
+
+  // -------------------------------------------------------------
   // Procedural Asteroid Field Generation (40 Asteroids)
   // -------------------------------------------------------------
   private generateAsteroids(trackWaypoints: THREE.Vector3[]): void {
@@ -162,8 +213,23 @@ export class AsteroidField {
       }
       geo.computeVertexNormals();
 
-      // Individual material clone so hit flash doesn't affect all asteroids
-      const mat = this.defaultAsteroidMaterial.clone();
+      // Alternate crystalline vein colors: #00e5ff (cyan) or #ff0055 (neon pink/ruby)
+      const isCyan = Math.random() > 0.45;
+      const veinColorHex = isCyan ? 0x00e5ff : 0xff0055;
+      const veinTexture = isCyan ? this.cyanVeinTexture : this.magentaVeinTexture;
+      const baseEmissiveIntensity = 1.6;
+
+      // Subtle metallic roughness highlights and crystalline veins
+      const mat = new THREE.MeshStandardMaterial({
+        color: 0x333230,
+        roughness: 0.38, // Metallic specular highlights catching celestial light
+        metalness: 0.45,
+        emissive: new THREE.Color(veinColorHex),
+        emissiveMap: veinTexture,
+        emissiveIntensity: baseEmissiveIntensity,
+        flatShading: true,
+      });
+
       const mesh = new THREE.Mesh(geo, mat);
       mesh.position.copy(pos);
       mesh.rotation.set(
@@ -185,6 +251,8 @@ export class AsteroidField {
         ),
         hp: 3, // 3 Hit points
         flashTimer: 0,
+        baseEmissiveColor: veinColorHex,
+        baseEmissiveIntensity,
       });
     }
   }
@@ -370,8 +438,8 @@ export class AsteroidField {
         ast.flashTimer = Math.max(0, ast.flashTimer - dt);
         if (ast.flashTimer === 0) {
           const mat = ast.mesh.material as THREE.MeshStandardMaterial;
-          mat.emissive.setHex(0x000000);
-          mat.emissiveIntensity = 0;
+          mat.emissive.setHex(ast.baseEmissiveColor);
+          mat.emissiveIntensity = ast.baseEmissiveIntensity;
         }
       }
     }
