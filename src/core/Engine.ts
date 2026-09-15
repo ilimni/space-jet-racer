@@ -33,9 +33,15 @@ export class Engine {
     this.scene = new THREE.Scene();
     this.scene.background = new THREE.Color(0x060913);
 
-    // 2. Initialize Camera with extended far plane (4000) for deep celestial visibility
+    // 2. Initialize Camera with extended far plane (4000) and dynamic FOV
     const aspect = window.innerWidth / window.innerHeight;
-    this.camera = new THREE.PerspectiveCamera(60, aspect, 0.1, 4000);
+    this.camera = new THREE.PerspectiveCamera(65, aspect, 0.1, 4000);
+    if (aspect < 1.0) {
+      this.camera.fov = 75 + (1.0 - aspect) * 20;
+    } else {
+      this.camera.fov = 65;
+    }
+    this.camera.updateProjectionMatrix();
     this.camera.position.set(0, 3, 7);
     this.camera.lookAt(0, 0, -2);
 
@@ -46,7 +52,7 @@ export class Engine {
       alpha: false,
     });
     this.renderer.setSize(window.innerWidth, window.innerHeight);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
     this.renderer.toneMapping = THREE.ACESFilmicToneMapping;
     this.renderer.toneMappingExposure = 1.1;
     this.container.appendChild(this.renderer.domElement);
@@ -130,12 +136,19 @@ export class Engine {
   private onWindowResize = (): void => {
     const width = window.innerWidth;
     const height = window.innerHeight;
+    const aspect = width / height;
 
-    this.camera.aspect = width / height;
+    this.camera.aspect = aspect;
+    if (aspect < 1.0) {
+      // Portrait fallback: expand FOV so the jet doesn't consume the entire view
+      this.camera.fov = 75 + (1.0 - aspect) * 20;
+    } else {
+      this.camera.fov = 65;
+    }
     this.camera.updateProjectionMatrix();
 
     this.renderer.setSize(width, height);
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2.0));
   };
 
   public onUpdate(callback: UpdateCallback): () => void {

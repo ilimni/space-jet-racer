@@ -13,7 +13,7 @@
       }
       html, body {
         width: 100%;
-        height: 100%;
+        height: 100dvh;
         margin: 0;
         padding: 0;
         overflow: hidden;
@@ -25,19 +25,39 @@
       }
       #game-container {
         width: 100%;
-        height: 100%;
+        height: 100dvh;
         position: relative;
         overflow: hidden;
       }
       canvas {
         display: block;
         width: 100%;
-        height: 100%;
+        height: 100dvh;
       }
     </style>
-    <script type="module" crossorigin src="/assets/index-DAzaik5I.js"></script>
+    <script type="module" crossorigin src="/assets/index-akXYCLTO.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-CE2WazyT.css">
   </head>
   <body>
+    <div id="orientation-lock-prompt">
+      <svg
+        width="64"
+        height="64"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="#00e5ff"
+        stroke-width="2"
+        stroke-linecap="round"
+        stroke-linejoin="round"
+        class="rotate-device-icon"
+      >
+        <rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect>
+        <line x1="12" y1="18" x2="12.01" y2="18"></line>
+      </svg>
+      <div style="margin-top: 18px; font-size: 15px; font-weight: 800; letter-spacing: 1.5px; line-height: 1.5; text-shadow: 0 0 10px rgba(0, 229, 255, 0.6); max-width: 320px;">
+        PLEASE ROTATE YOUR DEVICE TO LANDSCAPE FOR OPTIMAL FLIGHT
+      </div>
+    </div>
     <div id="game-container"></div>
   </body>
 </html>

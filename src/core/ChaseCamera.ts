@@ -58,6 +58,16 @@ export class ChaseCamera {
     const jetPos = this.jet.mesh.position;
     const jetQuat = this.jet.mesh.quaternion;
 
+    // Dynamic Aspect Ratio & Portrait FOV check
+    const aspect = window.innerWidth / window.innerHeight;
+    this.camera.aspect = aspect;
+    if (aspect < 1.0) {
+      // Portrait fallback: expand FOV so the jet doesn't consume the entire view
+      this.baseFov = 75 + (1.0 - aspect) * 20;
+    } else {
+      this.baseFov = 65;
+    }
+
     // -------------------------------------------------------------
     // 1. Dynamic FOV and Offset during Boost (+10% FOV)
     // -------------------------------------------------------------

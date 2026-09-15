@@ -59,7 +59,7 @@ export class InputManager {
 
   private stickCenter: { x: number; y: number } = { x: 0, y: 0 };
   private stickVector: { x: number; y: number } = { x: 0, y: 0 };
-  private readonly STICK_MAX_RADIUS = 50;
+  private readonly STICK_MAX_RADIUS = 35;
 
   constructor() {
     // Load persisted pitch dynamics preference (defaults to false / Standard Arcade)
@@ -184,10 +184,10 @@ export class InputManager {
     this.stickBase = document.createElement('div');
     Object.assign(this.stickBase.style, {
       position: 'absolute',
-      bottom: '36px',
-      left: '36px',
-      width: '120px',
-      height: '120px',
+      bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
+      left: 'max(16px, env(safe-area-inset-left, 16px))',
+      width: '90px',
+      height: '90px',
       borderRadius: '50%',
       background: 'radial-gradient(circle, rgba(15, 23, 42, 0.75) 0%, rgba(10, 15, 30, 0.9) 100%)',
       border: '2px solid rgba(0, 240, 255, 0.45)',
@@ -203,8 +203,8 @@ export class InputManager {
 
     this.stickThumb = document.createElement('div');
     Object.assign(this.stickThumb.style, {
-      width: '52px',
-      height: '52px',
+      width: '40px',
+      height: '40px',
       borderRadius: '50%',
       background: 'radial-gradient(circle, #00f0ff 0%, #0284c7 100%)',
       boxShadow: '0 0 12px rgba(0, 240, 255, 0.8)',
@@ -216,17 +216,17 @@ export class InputManager {
 
     // 2. Tactile Red FIRE Button (Bottom-Right, Stacked Above Boost)
     this.fireButton = document.createElement('div');
-    this.fireButton.innerHTML = `<span style="font-size: 12px; font-weight: 900; letter-spacing: 1.5px; color: #fff; text-shadow: 0 0 8px #ff0055;">FIRE</span>`;
+    this.fireButton.innerHTML = `<span style="font-size: 11px; font-weight: 900; letter-spacing: 1px; color: #fff; text-shadow: 0 0 8px #ff0055;">FIRE</span>`;
     Object.assign(this.fireButton.style, {
       position: 'absolute',
-      bottom: '142px',
-      right: '42px',
-      width: '76px',
-      height: '76px',
+      bottom: 'calc(max(16px, env(safe-area-inset-bottom, 16px)) + 64px)',
+      right: 'max(16px, env(safe-area-inset-right, 16px))',
+      width: '52px',
+      height: '52px',
       borderRadius: '50%',
       background: 'radial-gradient(circle, rgba(255, 0, 85, 0.9) 0%, rgba(180, 0, 50, 0.95) 100%)',
       border: '2px solid #ff0055',
-      boxShadow: '0 0 20px rgba(255, 0, 85, 0.7), inset 0 0 10px rgba(255, 100, 150, 0.4)',
+      boxShadow: '0 0 16px rgba(255, 0, 85, 0.6), inset 0 0 8px rgba(255, 100, 150, 0.4)',
       pointerEvents: 'auto',
       touchAction: 'none',
       display: 'flex',
@@ -241,17 +241,17 @@ export class InputManager {
 
     // 3. Tactile Orange BOOST Button (Bottom-Right)
     this.boostButton = document.createElement('div');
-    this.boostButton.innerHTML = `<span style="font-size: 13px; font-weight: 800; letter-spacing: 1.5px; color: #fff; text-shadow: 0 0 8px #ff5500;">BOOST</span>`;
+    this.boostButton.innerHTML = `<span style="font-size: 11px; font-weight: 800; letter-spacing: 1px; color: #fff; text-shadow: 0 0 8px #ff5500;">BOOST</span>`;
     Object.assign(this.boostButton.style, {
       position: 'absolute',
-      bottom: '36px',
-      right: '36px',
-      width: '88px',
-      height: '88px',
+      bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
+      right: 'max(16px, env(safe-area-inset-right, 16px))',
+      width: '52px',
+      height: '52px',
       borderRadius: '50%',
       background: 'radial-gradient(circle, rgba(255, 85, 0, 0.85) 0%, rgba(180, 40, 0, 0.95) 100%)',
       border: '2px solid #ff7722',
-      boxShadow: '0 0 20px rgba(255, 85, 0, 0.6), inset 0 0 10px rgba(255, 200, 0, 0.4)',
+      boxShadow: '0 0 16px rgba(255, 85, 0, 0.6), inset 0 0 8px rgba(255, 200, 0, 0.4)',
       pointerEvents: 'auto',
       touchAction: 'none',
       display: 'flex',

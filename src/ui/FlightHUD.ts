@@ -150,9 +150,12 @@ export class FlightHUD {
       /* Unified Top Header Layout & Responsive Rules */
       #hud-top-header {
         position: absolute;
-        top: 14px;
-        left: 16px;
-        right: 16px;
+        top: 0px;
+        left: 0px;
+        right: 0px;
+        padding-left: max(16px, env(safe-area-inset-left));
+        padding-right: max(16px, env(safe-area-inset-right));
+        padding-top: max(10px, env(safe-area-inset-top));
         display: flex;
         justify-content: space-between;
         align-items: center;
@@ -161,12 +164,23 @@ export class FlightHUD {
         box-sizing: border-box;
       }
 
-      @media (max-width: 600px) {
+      /* Mobile Landscape Scaling (screen height <= 500px) */
+      @media (max-height: 500px) {
         #hud-top-header {
-          top: 8px !important;
-          left: 10px !important;
-          right: 10px !important;
+          transform: scale(0.78);
+          transform-origin: top center;
+          padding-top: max(4px, env(safe-area-inset-top)) !important;
         }
+        #hud-bottom-dashboard {
+          transform: translateX(-50%) scale(0.75) !important;
+          transform-origin: bottom center !important;
+          bottom: max(8px, env(safe-area-inset-bottom, 8px)) !important;
+          padding: 8px 16px !important;
+          gap: 14px !important;
+        }
+      }
+
+      @media (max-width: 600px) {
         #hud-top-left {
           gap: 4px !important;
         }
@@ -495,7 +509,7 @@ export class FlightHUD {
     this.bottomPanelEl.id = 'hud-bottom-dashboard';
     Object.assign(this.bottomPanelEl.style, {
       position: 'absolute',
-      bottom: '24px',
+      bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
       left: '50%',
       transform: 'translateX(-50%)',
       display: 'flex',
