@@ -6,9 +6,23 @@ export class ChaseCamera {
   public jet: Jet;
 
   // Offsets relative to Jet local frame
-  public baseOffset: THREE.Vector3 = new THREE.Vector3(0, 2.5, 7.5);
-  public boostOffset: THREE.Vector3 = new THREE.Vector3(0, 2.8, 9.2);
-  public lookAheadOffset: THREE.Vector3 = new THREE.Vector3(0, 0.4, -14.0);
+  public baseOffset: THREE.Vector3 = new THREE.Vector3(0, 3.2, 7.5);
+  public boostOffset: THREE.Vector3 = new THREE.Vector3(0, 3.5, 9.2);
+  public lookAheadOffset: THREE.Vector3 = new THREE.Vector3(0, 1.6, -14.0);
+
+  public get cameraOffset(): THREE.Vector3 {
+    return this.baseOffset;
+  }
+  public set cameraOffset(v: THREE.Vector3) {
+    this.baseOffset = v;
+  }
+
+  public get targetOffset(): THREE.Vector3 {
+    return this.lookAheadOffset;
+  }
+  public set targetOffset(v: THREE.Vector3) {
+    this.lookAheadOffset = v;
+  }
 
   // Field of View
   public baseFov: number = 60.0;
@@ -21,8 +35,8 @@ export class ChaseCamera {
   public rollDamping: number = 6.0;
 
   // Internal Tracking States
-  private currentLookAt: THREE.Vector3 = new THREE.Vector3(0, 0, -10);
-  private currentOffset: THREE.Vector3 = new THREE.Vector3(0, 2.5, 7.5);
+  private currentLookAt: THREE.Vector3 = new THREE.Vector3(0, 1.6, -10);
+  private currentOffset: THREE.Vector3 = new THREE.Vector3(0, 3.2, 7.5);
 
   // Pre-allocated vectors to prevent GC
   private readonly desiredPos = new THREE.Vector3();

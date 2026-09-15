@@ -66,12 +66,13 @@ export class FlightHUD {
   private readonly rivalOffset = new THREE.Vector3(0, 3.2, 0);
   public onPodiumRestart?: () => void;
 
-  // Unified Top Header & In-Game Gauges
+  // Unified Top Header & Peripheral Gauges
   private headerContainerEl!: HTMLElement;
   private headerLeftEl!: HTMLElement;
   private headerCenterEl!: HTMLElement;
   private headerRightEl!: HTMLElement;
-  private bottomPanelEl!: HTMLElement;
+  private boostGaugeContainer!: HTMLElement;
+  private heatGaugeContainer!: HTMLElement;
   private keyHintEl?: HTMLElement;
 
   // Reusable vectors for projection
@@ -158,25 +159,79 @@ export class FlightHUD {
         padding-top: max(10px, env(safe-area-inset-top));
         display: flex;
         justify-content: space-between;
-        align-items: center;
+        align-items: flex-start;
         pointer-events: none;
         z-index: 2000;
         box-sizing: border-box;
       }
 
+      /* Peripheral Corner Gauges */
+      #hud-boost-gauge {
+        position: absolute;
+        bottom: 56px;
+        left: max(16px, env(safe-area-inset-left, 16px));
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 6px 12px;
+        background: rgba(10, 15, 25, 0.78);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        border-radius: 10px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        pointer-events: none;
+        z-index: 2010;
+        width: 140px;
+        box-sizing: border-box;
+      }
+
+      #hud-heat-gauge {
+        position: absolute;
+        bottom: 56px;
+        right: max(16px, env(safe-area-inset-right, 16px));
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        padding: 6px 12px;
+        background: rgba(10, 15, 25, 0.78);
+        border: 1px solid rgba(255, 0, 85, 0.3);
+        border-radius: 10px;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        pointer-events: none;
+        z-index: 2010;
+        width: 140px;
+        box-sizing: border-box;
+      }
+
+      /* Touch Screen Position Overrides: Anchor cleanly above mobile controls */
+      @media (hover: none) and (pointer: coarse), (max-width: 900px) {
+        #hud-boost-gauge {
+          bottom: calc(max(16px, env(safe-area-inset-bottom, 16px)) + 104px) !important;
+        }
+        #hud-heat-gauge {
+          bottom: calc(max(16px, env(safe-area-inset-bottom, 16px)) + 130px) !important;
+        }
+      }
+
       /* Mobile Landscape Scaling (screen height <= 500px) */
       @media (max-height: 500px) {
         #hud-top-header {
-          transform: scale(0.78);
+          transform: scale(0.85);
           transform-origin: top center;
-          padding-top: max(4px, env(safe-area-inset-top)) !important;
+          padding-top: max(2px, env(safe-area-inset-top, 2px)) !important;
         }
-        #hud-bottom-dashboard {
-          transform: translateX(-50%) scale(0.75) !important;
-          transform-origin: bottom center !important;
-          bottom: max(8px, env(safe-area-inset-bottom, 8px)) !important;
-          padding: 8px 16px !important;
-          gap: 14px !important;
+        #hud-boost-gauge {
+          transform: scale(0.85);
+          transform-origin: bottom left;
+          bottom: calc(max(10px, env(safe-area-inset-bottom, 10px)) + 92px) !important;
+        }
+        #hud-heat-gauge {
+          transform: scale(0.85);
+          transform-origin: bottom right;
+          bottom: calc(max(10px, env(safe-area-inset-bottom, 10px)) + 118px) !important;
         }
       }
 
@@ -353,7 +408,7 @@ export class FlightHUD {
 
     this.headerContainerEl.appendChild(this.headerLeftEl);
 
-    // Center Column: Race Stopwatch (MM:SS:ms)
+    // Center Column: Race Stopwatch + Digital Speedometer + 10-Heart Life Row
     this.headerCenterEl = document.createElement('div');
     this.headerCenterEl.id = 'hud-top-center';
     Object.assign(this.headerCenterEl.style, {
@@ -361,28 +416,93 @@ export class FlightHUD {
       flexDirection: 'column',
       alignItems: 'center',
       pointerEvents: 'auto',
+      gap: '2px',
+      maxHeight: '62px',
     });
 
+    // 1. Race Stopwatch
     this.timerEl = document.createElement('div');
     this.timerEl.id = 'hud-timer-container';
     Object.assign(this.timerEl.style, {
       display: 'flex',
-      flexDirection: 'column',
-      alignItems: 'center',
-      padding: '5px 16px',
+      alignItems: 'baseline',
+      gap: '6px',
+      padding: '2px 10px',
       background: 'rgba(10, 15, 25, 0.82)',
-      border: '1px solid rgba(0, 240, 255, 0.35)',
-      borderRadius: '12px',
-      boxShadow: '0 4px 16px rgba(0, 0, 0, 0.5), inset 0 0 8px rgba(0, 240, 255, 0.1)',
+      border: '1px solid rgba(56, 189, 248, 0.35)',
+      borderRadius: '8px',
+      boxShadow: '0 2px 10px rgba(0, 0, 0, 0.5)',
       backdropFilter: 'blur(8px)',
       webkitBackdropFilter: 'blur(8px)',
       whiteSpace: 'nowrap',
     });
     this.timerEl.innerHTML = `
-      <span style="font-size: 8.5px; font-weight: 700; letter-spacing: 2px; color: #94a3b8; text-transform: uppercase;">COURSE TIME</span>
-      <span id="timer-digits" style="font-size: 19px; font-weight: 900; font-family: ui-monospace, SFMono-Regular, monospace; color: #ffffff; letter-spacing: 1px; text-shadow: 0 0 10px rgba(0, 240, 255, 0.5);">00:00:00</span>
+      <span style="font-size: 8px; font-weight: 700; letter-spacing: 1.5px; color: #94a3b8; text-transform: uppercase;">TIME</span>
+      <span id="timer-digits" style="font-size: 14px; font-weight: 900; font-family: ui-monospace, SFMono-Regular, monospace; color: #ffffff; letter-spacing: 0.8px; text-shadow: 0 0 8px rgba(56, 189, 248, 0.4);">00:00:00</span>
     `;
     this.headerCenterEl.appendChild(this.timerEl);
+
+    // 2. Digital Speedometer: Sleek monospace readout (#38bdf8, 15px)
+    const speedRow = document.createElement('div');
+    speedRow.id = 'hud-speed-row';
+    Object.assign(speedRow.style, {
+      display: 'flex',
+      alignItems: 'center',
+      marginTop: '1px',
+    });
+
+    this.speedValueEl = document.createElement('div');
+    Object.assign(this.speedValueEl.style, {
+      fontSize: '15px',
+      fontWeight: '900',
+      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
+      color: '#38bdf8',
+      letterSpacing: '0.8px',
+      textShadow: '0 0 8px rgba(56, 189, 248, 0.5)',
+      lineHeight: '1.1',
+      whiteSpace: 'nowrap',
+    });
+    this.speedValueEl.innerText = '0 KM/H';
+    speedRow.appendChild(this.speedValueEl);
+
+    this.speedBarFillEl = document.createElement('div');
+    this.speedBarFillEl.style.display = 'none';
+    speedRow.appendChild(this.speedBarFillEl);
+
+    this.headerCenterEl.appendChild(speedRow);
+
+    // 3. 10-Heart Life Row: Compact horizontal pip row (9px hearts, 3px spacing)
+    this.heartsRowEl = document.createElement('div');
+    this.heartsRowEl.id = 'hud-hearts-row';
+    Object.assign(this.heartsRowEl.style, {
+      display: 'flex',
+      alignItems: 'center',
+      gap: '3px',
+      marginTop: '1px',
+      lineHeight: '9px',
+    });
+
+    this.heartElements = [];
+    for (let i = 0; i < this.MAX_HEARTS; i++) {
+      const heart = document.createElement('span');
+      heart.innerText = '♥';
+      Object.assign(heart.style, {
+        fontSize: '9px',
+        lineHeight: '9px',
+        color: '#ff1a75',
+        textShadow: '0 0 6px #ff1a75',
+        display: 'inline-block',
+        transition: 'all 0.2s ease',
+      });
+      this.heartElements.push(heart);
+      this.heartsRowEl.appendChild(heart);
+    }
+    this.headerCenterEl.appendChild(this.heartsRowEl);
+
+    this.heartsTextEl = document.createElement('span');
+    this.heartsTextEl.style.display = 'none';
+    this.headerCenterEl.appendChild(this.heartsTextEl);
+
     this.headerContainerEl.appendChild(this.headerCenterEl);
 
     // Right Row: FPS monitor and PAUSE button side-by-side with 10px gap
@@ -503,233 +623,12 @@ export class FlightHUD {
     this.container.appendChild(this.navChevronEl);
 
     // -------------------------------------------------------------
-    // 2. Cockpit Bottom Dashboard Container (Speedometer, Hearts, Boost, Heat)
+    // Peripheral Corner Gauges (Unobstructed Viewport Center)
     // -------------------------------------------------------------
-    this.bottomPanelEl = document.createElement('div');
-    this.bottomPanelEl.id = 'hud-bottom-dashboard';
-    Object.assign(this.bottomPanelEl.style, {
-      position: 'absolute',
-      bottom: 'max(16px, env(safe-area-inset-bottom, 16px))',
-      left: '50%',
-      transform: 'translateX(-50%)',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '22px',
-      padding: '14px 28px',
-      background: 'rgba(10, 15, 25, 0.82)',
-      border: '1px solid rgba(0, 240, 255, 0.4)',
-      borderRadius: '18px',
-      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.65), inset 0 0 16px rgba(0, 240, 255, 0.08)',
-      backdropFilter: 'blur(12px)',
-      webkitBackdropFilter: 'blur(12px)',
-      pointerEvents: 'auto',
-      maxWidth: '96vw',
-      flexWrap: 'wrap',
-      justifyContent: 'center',
-    });
-
-    // Speedometer & 10-Heart Cluster
-    const speedBlock = document.createElement('div');
-    Object.assign(speedBlock.style, {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '6px',
-      minWidth: '220px',
-    });
-
-    const speedHeader = document.createElement('div');
-    Object.assign(speedHeader.style, {
-      fontSize: '10px',
-      fontWeight: '700',
-      letterSpacing: '1.5px',
-      color: '#94a3b8',
-      textTransform: 'uppercase',
-    });
-    speedHeader.innerText = 'VELOCITY';
-    speedBlock.appendChild(speedHeader);
-
-    const speedDisplayRow = document.createElement('div');
-    Object.assign(speedDisplayRow.style, {
-      display: 'flex',
-      alignItems: 'baseline',
-      gap: '6px',
-    });
-
-    this.speedValueEl = document.createElement('div');
-    Object.assign(this.speedValueEl.style, {
-      fontSize: '28px',
-      fontWeight: '900',
-      fontFamily: 'ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace',
-      color: '#ffffff',
-      letterSpacing: '-0.5px',
-      textShadow: '0 0 12px rgba(255, 255, 255, 0.4)',
-    });
-    this.speedValueEl.innerText = '1200';
-    speedDisplayRow.appendChild(this.speedValueEl);
-
-    const speedUnit = document.createElement('span');
-    Object.assign(speedUnit.style, {
-      fontSize: '11px',
-      fontWeight: '700',
-      color: '#00f0ff',
-      letterSpacing: '1px',
-    });
-    speedUnit.innerText = 'KM/H';
-    speedDisplayRow.appendChild(speedUnit);
-    speedBlock.appendChild(speedDisplayRow);
-
-    const speedBarTrack = document.createElement('div');
-    Object.assign(speedBarTrack.style, {
-      width: '100%',
-      height: '4px',
-      background: 'rgba(255, 255, 255, 0.12)',
-      borderRadius: '2px',
-      overflow: 'hidden',
-      marginTop: '2px',
-    });
-
-    this.speedBarFillEl = document.createElement('div');
-    Object.assign(this.speedBarFillEl.style, {
-      width: '55%',
-      height: '100%',
-      background: 'linear-gradient(90deg, #00f0ff, #38bdf8)',
-      boxShadow: '0 0 8px #00f0ff',
-      transition: 'width 0.1s ease',
-    });
-    speedBarTrack.appendChild(this.speedBarFillEl);
-    speedBlock.appendChild(speedBarTrack);
-
-    // 10-Heart Health Row
-    const healthContainer = document.createElement('div');
-    Object.assign(healthContainer.style, {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '8px',
-      marginTop: '4px',
-    });
-
-    this.heartsRowEl = document.createElement('div');
-    Object.assign(this.heartsRowEl.style, {
-      display: 'flex',
-      alignItems: 'center',
-      gap: '4px',
-    });
-
-    for (let i = 0; i < this.MAX_HEARTS; i++) {
-      const heart = document.createElement('span');
-      heart.innerText = '♥';
-      Object.assign(heart.style, {
-        fontSize: '15px',
-        color: '#ff1a75',
-        textShadow: '0 0 8px #ff1a75, 0 0 16px rgba(255, 26, 117, 0.6)',
-        display: 'inline-block',
-        transition: 'all 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275)',
-      });
-      this.heartElements.push(heart);
-      this.heartsRowEl.appendChild(heart);
-    }
-    healthContainer.appendChild(this.heartsRowEl);
-
-    this.heartsTextEl = document.createElement('span');
-    Object.assign(this.heartsTextEl.style, {
-      fontSize: '11px',
-      fontWeight: '800',
-      fontFamily: 'ui-monospace, monospace',
-      color: '#ff1a75',
-      letterSpacing: '0.5px',
-      whiteSpace: 'nowrap',
-    });
-    this.heartsTextEl.innerText = '(10 / 10 HEARTS)';
-    healthContainer.appendChild(this.heartsTextEl);
-
-    speedBlock.appendChild(healthContainer);
-    this.bottomPanelEl.appendChild(speedBlock);
-
-    // Separator 1
-    const sep1 = document.createElement('div');
-    Object.assign(sep1.style, {
-      width: '1px',
-      height: '56px',
-      background: 'rgba(255, 255, 255, 0.15)',
-    });
-    this.bottomPanelEl.appendChild(sep1);
-
-    // Weapon Heat Gauge Block
-    const heatBlock = document.createElement('div');
-    Object.assign(heatBlock.style, {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '6px',
-      minWidth: '130px',
-    });
-
-    const heatHeaderRow = document.createElement('div');
-    Object.assign(heatHeaderRow.style, {
-      display: 'flex',
-      justifyContent: 'space-between',
-      alignItems: 'center',
-    });
-
-    const heatTitle = document.createElement('div');
-    Object.assign(heatTitle.style, {
-      fontSize: '10px',
-      fontWeight: '700',
-      letterSpacing: '1.5px',
-      color: '#94a3b8',
-      textTransform: 'uppercase',
-    });
-    heatTitle.innerText = 'CANNON HEAT';
-    heatHeaderRow.appendChild(heatTitle);
-
-    this.heatStatusEl = document.createElement('div');
-    Object.assign(this.heatStatusEl.style, {
-      fontSize: '10px',
-      fontWeight: '800',
-      fontFamily: 'ui-monospace, monospace',
-      color: '#ff0055',
-    });
-    this.heatStatusEl.innerText = 'READY';
-    heatHeaderRow.appendChild(this.heatStatusEl);
-    heatBlock.appendChild(heatHeaderRow);
-
-    const heatTrack = document.createElement('div');
-    Object.assign(heatTrack.style, {
-      width: '100%',
-      height: '8px',
-      background: 'rgba(255, 255, 255, 0.12)',
-      borderRadius: '4px',
-      overflow: 'hidden',
-    });
-
-    this.heatBarFillEl = document.createElement('div');
-    Object.assign(this.heatBarFillEl.style, {
-      width: '0%',
-      height: '100%',
-      background: 'linear-gradient(90deg, #ff0055, #ff5500)',
-      boxShadow: '0 0 8px #ff0055',
-      transition: 'width 0.08s ease',
-    });
-    heatTrack.appendChild(this.heatBarFillEl);
-    heatBlock.appendChild(heatTrack);
-    this.bottomPanelEl.appendChild(heatBlock);
-
-    // Separator 2
-    const sep2 = document.createElement('div');
-    Object.assign(sep2.style, {
-      width: '1px',
-      height: '56px',
-      background: 'rgba(255, 255, 255, 0.15)',
-    });
-    this.bottomPanelEl.appendChild(sep2);
-
-    // Boost Meter Block
-    const boostBlock = document.createElement('div');
-    Object.assign(boostBlock.style, {
-      display: 'flex',
-      flexDirection: 'column',
-      gap: '4px',
-      minWidth: '140px',
-    });
+    // 1. Boost Gauge: Slim horizontal segmented cyan bar (Bottom-Left)
+    this.boostGaugeContainer = document.createElement('div');
+    this.boostGaugeContainer.id = 'hud-boost-gauge';
+    this.boostSegments = [];
 
     const boostHeaderRow = document.createElement('div');
     Object.assign(boostHeaderRow.style, {
@@ -740,50 +639,103 @@ export class FlightHUD {
 
     const boostTitle = document.createElement('div');
     Object.assign(boostTitle.style, {
-      fontSize: '10px',
-      fontWeight: '700',
+      fontSize: '9px',
+      fontWeight: '800',
       letterSpacing: '1.5px',
-      color: '#94a3b8',
+      color: '#38bdf8',
       textTransform: 'uppercase',
     });
-    boostTitle.innerText = 'BOOST DRIVE';
+    boostTitle.innerText = 'BOOST';
     boostHeaderRow.appendChild(boostTitle);
 
     this.boostPercentEl = document.createElement('div');
     Object.assign(this.boostPercentEl.style, {
-      fontSize: '11px',
+      fontSize: '10px',
       fontWeight: '800',
       fontFamily: 'ui-monospace, monospace',
-      color: '#00f0ff',
+      color: '#38bdf8',
     });
     this.boostPercentEl.innerText = '100%';
     boostHeaderRow.appendChild(this.boostPercentEl);
-    boostBlock.appendChild(boostHeaderRow);
+    this.boostGaugeContainer.appendChild(boostHeaderRow);
 
     const segmentsRow = document.createElement('div');
     Object.assign(segmentsRow.style, {
       display: 'flex',
-      gap: '4px',
-      marginTop: '6px',
+      gap: '3px',
+      marginTop: '3px',
     });
 
     for (let i = 0; i < this.NUM_BOOST_SEGMENTS; i++) {
       const seg = document.createElement('div');
       Object.assign(seg.style, {
         flex: '1',
-        height: '14px',
-        borderRadius: '2px',
+        height: '8px',
+        borderRadius: '1px',
         background: '#00f0ff',
-        boxShadow: '0 0 6px rgba(0, 240, 255, 0.6)',
+        boxShadow: '0 0 5px rgba(0, 240, 255, 0.6)',
         transition: 'background 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease',
       });
       this.boostSegments.push(seg);
       segmentsRow.appendChild(seg);
     }
-    boostBlock.appendChild(segmentsRow);
-    this.bottomPanelEl.appendChild(boostBlock);
+    this.boostGaugeContainer.appendChild(segmentsRow);
+    this.container.appendChild(this.boostGaugeContainer);
 
-    this.container.appendChild(this.bottomPanelEl);
+    // 2. Cannon Heat Gauge: Compact status indicator & bar (Bottom-Right)
+    this.heatGaugeContainer = document.createElement('div');
+    this.heatGaugeContainer.id = 'hud-heat-gauge';
+
+    const heatHeaderRow = document.createElement('div');
+    Object.assign(heatHeaderRow.style, {
+      display: 'flex',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+    });
+
+    const heatTitle = document.createElement('div');
+    Object.assign(heatTitle.style, {
+      fontSize: '9px',
+      fontWeight: '800',
+      letterSpacing: '1.5px',
+      color: '#94a3b8',
+      textTransform: 'uppercase',
+    });
+    heatTitle.innerText = 'CANNON';
+    heatHeaderRow.appendChild(heatTitle);
+
+    this.heatStatusEl = document.createElement('div');
+    Object.assign(this.heatStatusEl.style, {
+      fontSize: '9.5px',
+      fontWeight: '800',
+      fontFamily: 'ui-monospace, monospace',
+      color: '#00f0ff',
+    });
+    this.heatStatusEl.innerText = 'READY';
+    heatHeaderRow.appendChild(this.heatStatusEl);
+    this.heatGaugeContainer.appendChild(heatHeaderRow);
+
+    const heatTrack = document.createElement('div');
+    Object.assign(heatTrack.style, {
+      width: '100%',
+      height: '6px',
+      background: 'rgba(255, 255, 255, 0.12)',
+      borderRadius: '3px',
+      overflow: 'hidden',
+      marginTop: '3px',
+    });
+
+    this.heatBarFillEl = document.createElement('div');
+    Object.assign(this.heatBarFillEl.style, {
+      width: '0%',
+      height: '100%',
+      background: 'linear-gradient(90deg, #ff0055, #ff5500)',
+      boxShadow: '0 0 6px #ff0055',
+      transition: 'width 0.08s ease',
+    });
+    heatTrack.appendChild(this.heatBarFillEl);
+    this.heatGaugeContainer.appendChild(heatTrack);
+    this.container.appendChild(this.heatGaugeContainer);
 
     // Desktop Keybinding Hint
     this.keyHintEl = document.createElement('div');
@@ -1028,8 +980,9 @@ export class FlightHUD {
     this.finishBannerEl.style.opacity = '1.0';
 
     // Hide in-game cockpit gauges while podium is open
-    if (this.bottomPanelEl) this.bottomPanelEl.style.display = 'none';
     if (this.headerContainerEl) this.headerContainerEl.style.display = 'none';
+    if (this.boostGaugeContainer) this.boostGaugeContainer.style.display = 'none';
+    if (this.heatGaugeContainer) this.heatGaugeContainer.style.display = 'none';
     if (this.navChevronEl) this.navChevronEl.style.display = 'none';
     if (this.keyHintEl) this.keyHintEl.style.display = 'none';
     if (this.emergencyStrobeEl) this.emergencyStrobeEl.style.opacity = '0';
@@ -1148,8 +1101,9 @@ export class FlightHUD {
     this.finishBannerEl.style.display = 'none';
 
     // Restore in-game cockpit gauges
-    if (this.bottomPanelEl) this.bottomPanelEl.style.display = 'flex';
     if (this.headerContainerEl) this.headerContainerEl.style.display = 'flex';
+    if (this.boostGaugeContainer) this.boostGaugeContainer.style.display = 'flex';
+    if (this.heatGaugeContainer) this.heatGaugeContainer.style.display = 'flex';
     if (this.navChevronEl) this.navChevronEl.style.display = 'block';
     if (this.keyHintEl) this.keyHintEl.style.display = window.innerWidth > 900 ? 'block' : 'none';
     this.emergencyStrobeEl.style.opacity = '0';
@@ -1361,7 +1315,8 @@ export class FlightHUD {
 
       if (isOnScreen) {
         const screenX = (ndcX * 0.5 + 0.5) * window.innerWidth;
-        const screenY = (-ndcY * 0.5 + 0.5) * window.innerHeight;
+        // Clamp rival nameplates to remain at least 80px above bottom viewport edge
+        const screenY = Math.min((-ndcY * 0.5 + 0.5) * window.innerHeight, window.innerHeight - 80);
 
         marker.container.style.opacity = '1';
         marker.container.style.left = `${screenX}px`;
@@ -1381,7 +1336,8 @@ export class FlightHUD {
         const scale = Math.min(scaleX, scaleY);
 
         const screenX = halfW + dirX * scale;
-        const screenY = halfH - dirY * scale;
+        // Clamp off-screen indicator to remain at least 80px above bottom viewport edge
+        const screenY = Math.min(halfH - dirY * scale, window.innerHeight - 80);
 
         marker.container.style.opacity = '1';
         marker.container.style.left = `${screenX}px`;
@@ -1394,6 +1350,15 @@ export class FlightHUD {
         marker.card.style.transform = 'translate(-50%, -50%)';
       }
     }
+  }
+
+  public updateRivalBadges(
+    rivals: AIRival[],
+    playerPos: THREE.Vector3,
+    camera: THREE.PerspectiveCamera,
+    isRacing: boolean
+  ): void {
+    this.updateRivalMarkers(rivals, playerPos, camera, isRacing);
   }
 
   // -------------------------------------------------------------
@@ -1424,21 +1389,17 @@ export class FlightHUD {
       this.damageVignetteEl.style.opacity = this.damageFlashAlpha.toString();
     }
 
-    this.speedValueEl.innerText = speedKmH.toString();
+    this.speedValueEl.innerText = `${Math.round(speedKmH).toLocaleString()} KM/H`;
     const maxSpeed = 2200;
     const speedRatio = Math.min(Math.max(speedKmH / maxSpeed, 0), 1);
     this.speedBarFillEl.style.width = `${(speedRatio * 100).toFixed(0)}%`;
 
     if (isBoosting) {
       this.speedValueEl.style.color = '#ff9933';
-      this.speedValueEl.style.textShadow = '0 0 16px rgba(255, 120, 0, 0.8)';
-      this.speedBarFillEl.style.background = 'linear-gradient(90deg, #ff5500, #ffbb00)';
-      this.speedBarFillEl.style.boxShadow = '0 0 12px #ff5500';
+      this.speedValueEl.style.textShadow = '0 0 12px rgba(255, 120, 0, 0.8)';
     } else {
-      this.speedValueEl.style.color = '#ffffff';
-      this.speedValueEl.style.textShadow = '0 0 12px rgba(255, 255, 255, 0.4)';
-      this.speedBarFillEl.style.background = 'linear-gradient(90deg, #00f0ff, #38bdf8)';
-      this.speedBarFillEl.style.boxShadow = '0 0 8px #00f0ff';
+      this.speedValueEl.style.color = '#38bdf8';
+      this.speedValueEl.style.textShadow = '0 0 8px rgba(56, 189, 248, 0.5)';
     }
 
     const clampedBoost = Math.min(Math.max(boostPercent, 0), 100);

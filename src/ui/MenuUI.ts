@@ -105,9 +105,9 @@ export class MenuUI {
         <p class="subtitle-text">ORBITAL TIME &amp; TELEMETRY TEMPORARILY FROZEN</p>
 
         <!-- Pitch Axis Setting in Pause Menu -->
-        <div class="pause-settings-card" style="margin: 16px 0; padding: 12px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(255, 187, 0, 0.35); border-radius: 14px; text-align: left;">
-          <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #fbbf24; text-transform: uppercase; margin-bottom: 8px;">PITCH AXIS DYNAMICS</div>
-          <div class="pitch-toggle-group" style="display: flex; gap: 8px; background: rgba(8, 14, 28, 0.85); padding: 4px; border-radius: 10px; border: 1px solid rgba(255, 187, 0, 0.25);">
+        <div class="pause-settings-card" style="margin: 16px 0; padding: 12px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 14px; text-align: left;">
+          <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px;">PITCH AXIS DYNAMICS</div>
+          <div class="pitch-toggle-group" style="display: flex; gap: 8px; background: rgba(11, 18, 33, 0.85); padding: 4px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.18);">
             <button id="btn-pause-pitch-arcade" style="flex: 1; padding: 9px 8px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">ARCADE</button>
             <button id="btn-pause-pitch-sim" style="flex: 1; padding: 9px 8px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">FLIGHT SIM</button>
           </div>
@@ -154,7 +154,7 @@ export class MenuUI {
         left: 0;
         width: 100%;
         height: 100%;
-        background: radial-gradient(circle at center, rgba(8, 16, 36, 0.78) 0%, rgba(2, 4, 10, 0.94) 100%);
+        background: radial-gradient(circle at 50% 50%, rgba(0, 0, 0, 0) 30%, rgba(3, 7, 18, 0.7) 100%), linear-gradient(160deg, #070c18 0%, #0c1427 100%);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
         display: flex;
@@ -167,21 +167,23 @@ export class MenuUI {
       }
 
       .menu-modal-card {
-        background: rgba(10, 18, 38, 0.85);
-        border: 1px solid rgba(0, 240, 255, 0.35);
-        border-radius: 18px;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(56, 189, 248, 0.2);
+        backdrop-filter: blur(14px);
+        -webkit-backdrop-filter: blur(14px);
+        border-radius: 16px;
         padding: 32px 40px;
         width: 90%;
         max-width: 540px;
-        box-shadow: 0 0 60px rgba(0, 240, 255, 0.25), inset 0 0 20px rgba(0, 240, 255, 0.08);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         text-align: center;
-        color: #ffffff;
+        color: #e2e8f0;
         box-sizing: border-box;
       }
 
       .pause-card {
-        border-color: rgba(255, 170, 0, 0.45);
-        box-shadow: 0 0 60px rgba(255, 170, 0, 0.25), inset 0 0 20px rgba(255, 170, 0, 0.08);
+        border-color: rgba(56, 189, 248, 0.25);
+        box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         max-width: 440px;
       }
 
@@ -189,10 +191,10 @@ export class MenuUI {
         display: inline-block;
         font-size: 11px;
         font-weight: 800;
-        letter-spacing: 2.5px;
-        color: #00f0ff;
-        background: rgba(0, 240, 255, 0.12);
-        border: 1px solid rgba(0, 240, 255, 0.4);
+        letter-spacing: 2px;
+        color: #38bdf8;
+        background: rgba(56, 189, 248, 0.08);
+        border: 1px solid rgba(56, 189, 248, 0.25);
         padding: 4px 14px;
         border-radius: 20px;
         margin-bottom: 14px;
@@ -203,10 +205,10 @@ export class MenuUI {
         display: inline-block;
         font-size: 11px;
         font-weight: 800;
-        letter-spacing: 2.5px;
-        color: #ffbb00;
-        background: rgba(255, 187, 0, 0.12);
-        border: 1px solid rgba(255, 187, 0, 0.4);
+        letter-spacing: 2px;
+        color: #38bdf8;
+        background: rgba(56, 189, 248, 0.08);
+        border: 1px solid rgba(56, 189, 248, 0.25);
         padding: 4px 14px;
         border-radius: 20px;
         margin-bottom: 14px;
@@ -218,14 +220,14 @@ export class MenuUI {
         font-size: 34px;
         font-weight: 900;
         letter-spacing: 3px;
-        color: #ffffff;
-        text-shadow: 0 0 20px rgba(0, 240, 255, 0.7);
+        color: #e2e8f0;
+        text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
         text-transform: uppercase;
       }
 
       .logo-accent {
-        color: #00f0ff;
-        text-shadow: 0 0 24px #00f0ff;
+        color: #38bdf8;
+        text-shadow: 0 0 14px rgba(56, 189, 248, 0.45);
       }
 
       .pause-heading {
@@ -233,8 +235,8 @@ export class MenuUI {
         font-size: 28px;
         font-weight: 900;
         letter-spacing: 2.5px;
-        color: #ffffff;
-        text-shadow: 0 0 20px rgba(255, 170, 0, 0.6);
+        color: #e2e8f0;
+        text-shadow: 0 0 12px rgba(56, 189, 248, 0.35);
         text-transform: uppercase;
       }
 
@@ -242,7 +244,7 @@ export class MenuUI {
         margin: 0 0 24px 0;
         font-size: 11.5px;
         letter-spacing: 1.5px;
-        color: rgba(255, 255, 255, 0.65);
+        color: #94a3b8;
         font-weight: 500;
       }
 
@@ -256,7 +258,7 @@ export class MenuUI {
         font-size: 11px;
         font-weight: 700;
         letter-spacing: 2px;
-        color: #00f0ff;
+        color: #38bdf8;
         margin-bottom: 8px;
         text-transform: uppercase;
       }
@@ -264,20 +266,20 @@ export class MenuUI {
       .input-wrapper {
         display: flex;
         align-items: center;
-        background: rgba(0, 0, 0, 0.5);
-        border: 1px solid rgba(0, 240, 255, 0.3);
+        background: rgba(15, 23, 42, 0.9);
+        border: 1px solid #334155;
         border-radius: 10px;
         padding: 2px 14px;
         transition: border-color 0.2s, box-shadow 0.2s;
       }
 
       .input-wrapper:focus-within {
-        border-color: #00f0ff;
-        box-shadow: 0 0 16px rgba(0, 240, 255, 0.4);
+        border-color: #38bdf8;
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.25);
       }
 
       .input-prefix {
-        color: #00f0ff;
+        color: #38bdf8;
         font-size: 13px;
         margin-right: 10px;
       }
@@ -287,7 +289,7 @@ export class MenuUI {
         background: transparent;
         border: none;
         outline: none;
-        color: #ffffff;
+        color: #e2e8f0;
         font-size: 16px;
         font-weight: 700;
         letter-spacing: 2px;
@@ -309,9 +311,9 @@ export class MenuUI {
 
       .btn-primary {
         position: relative;
-        background: linear-gradient(135deg, #00f0ff 0%, #0088ff 100%);
-        color: #030a16;
-        border: none;
+        background: #0284c7;
+        color: #ffffff;
+        border: 1px solid rgba(56, 189, 248, 0.3);
         border-radius: 10px;
         padding: 14px 20px;
         font-size: 14px;
@@ -319,23 +321,25 @@ export class MenuUI {
         letter-spacing: 2px;
         text-transform: uppercase;
         cursor: pointer;
-        transition: transform 0.15s, box-shadow 0.2s;
-        box-shadow: 0 0 24px rgba(0, 240, 255, 0.5);
+        transition: transform 0.15s ease, background 0.2s ease, box-shadow 0.2s ease;
+        box-shadow: 0 4px 14px rgba(2, 132, 199, 0.35);
       }
 
       .btn-primary:hover {
+        background: #0369a1;
         transform: translateY(-2px);
-        box-shadow: 0 0 32px rgba(0, 240, 255, 0.8);
+        box-shadow: 0 6px 20px rgba(56, 189, 248, 0.45);
       }
 
       .btn-primary:active {
         transform: translateY(1px);
+        box-shadow: 0 2px 10px rgba(2, 132, 199, 0.3);
       }
 
       .btn-secondary {
-        background: rgba(255, 255, 255, 0.05);
-        color: #ffffff;
-        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(30, 41, 59, 0.85);
+        color: #94a3b8;
+        border: 1px solid #475569;
         border-radius: 10px;
         padding: 12px 20px;
         font-size: 13px;
@@ -343,19 +347,24 @@ export class MenuUI {
         letter-spacing: 1.5px;
         text-transform: uppercase;
         cursor: pointer;
-        transition: background 0.2s, border-color 0.2s, transform 0.15s;
+        transition: background 0.2s ease, border-color 0.2s ease, color 0.2s ease, transform 0.15s ease;
       }
 
       .btn-secondary:hover {
-        background: rgba(0, 240, 255, 0.12);
-        border-color: #00f0ff;
+        background: rgba(51, 65, 85, 0.9);
+        border-color: #64748b;
+        color: #e2e8f0;
         transform: translateY(-2px);
       }
 
+      .btn-secondary:active {
+        transform: translateY(1px);
+      }
+
       .btn-danger {
-        background: rgba(255, 0, 60, 0.1);
-        color: #ff3366;
-        border: 1px solid rgba(255, 0, 60, 0.4);
+        background: rgba(153, 27, 27, 0.2);
+        color: #f87171;
+        border: 1px solid rgba(239, 68, 68, 0.35);
         border-radius: 10px;
         padding: 12px 20px;
         font-size: 13px;
@@ -363,18 +372,18 @@ export class MenuUI {
         letter-spacing: 1.5px;
         text-transform: uppercase;
         cursor: pointer;
-        transition: background 0.2s, border-color 0.2s, transform 0.15s;
+        transition: background 0.2s ease, border-color 0.2s ease, transform 0.15s ease;
       }
 
       .btn-danger:hover {
-        background: rgba(255, 0, 60, 0.25);
-        border-color: #ff0055;
+        background: rgba(153, 27, 27, 0.35);
+        border-color: #ef4444;
         transform: translateY(-2px);
       }
 
       .briefing-card {
-        background: rgba(0, 0, 0, 0.4);
-        border: 1px solid rgba(255, 255, 255, 0.1);
+        background: rgba(15, 23, 42, 0.65);
+        border: 1px solid rgba(56, 189, 248, 0.15);
         border-radius: 12px;
         padding: 16px;
         text-align: left;
@@ -384,7 +393,7 @@ export class MenuUI {
         font-size: 10px;
         font-weight: 800;
         letter-spacing: 2px;
-        color: rgba(255, 255, 255, 0.5);
+        color: #64748b;
         margin-bottom: 10px;
         text-transform: uppercase;
       }
@@ -394,17 +403,17 @@ export class MenuUI {
         grid-template-columns: 1fr 1fr;
         gap: 8px;
         font-size: 11px;
-        color: rgba(255, 255, 255, 0.8);
+        color: #94a3b8;
       }
 
       .key-pill {
         display: inline-block;
-        background: rgba(255, 255, 255, 0.15);
-        border: 1px solid rgba(255, 255, 255, 0.25);
+        background: rgba(30, 41, 59, 0.8);
+        border: 1px solid #475569;
         border-radius: 4px;
         padding: 2px 6px;
         font-weight: 700;
-        color: #00f0ff;
+        color: #38bdf8;
         font-family: monospace;
         margin-right: 4px;
       }
@@ -412,17 +421,17 @@ export class MenuUI {
       .mobile-hint {
         margin-top: 10px;
         font-size: 10.5px;
-        color: rgba(255, 255, 255, 0.5);
+        color: #64748b;
       }
 
       /* In-Game Floating Pause Button */
       .pause-hud-trigger {
         position: relative;
-        background: rgba(6, 12, 28, 0.75);
-        border: 1px solid rgba(0, 240, 255, 0.35);
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(56, 189, 248, 0.25);
         border-radius: 8px;
         padding: 6px 14px;
-        color: #ffffff;
+        color: #e2e8f0;
         font-size: 11px;
         font-weight: 800;
         letter-spacing: 1.5px;
@@ -433,14 +442,14 @@ export class MenuUI {
         cursor: pointer;
         pointer-events: auto;
         backdrop-filter: blur(8px);
-        box-shadow: 0 0 14px rgba(0, 240, 255, 0.2);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
         transition: background 0.2s, border-color 0.2s, box-shadow 0.2s;
       }
 
       .pause-hud-trigger:hover {
-        background: rgba(0, 240, 255, 0.2);
-        border-color: #00f0ff;
-        box-shadow: 0 0 20px rgba(0, 240, 255, 0.5);
+        background: rgba(30, 41, 59, 0.9);
+        border-color: #38bdf8;
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
       }
     `;
     document.head.appendChild(styleEl);
@@ -531,22 +540,22 @@ export class MenuUI {
 
     if (btnPauseArcade && btnPauseSim) {
       if (!isInverted) {
-        // Arcade active: glowing cyan border & background
-        btnPauseArcade.style.borderColor = '#00f0ff';
-        btnPauseArcade.style.background = 'rgba(0, 240, 255, 0.22)';
+        // Arcade active: soft cyan border & background
+        btnPauseArcade.style.borderColor = '#38bdf8';
+        btnPauseArcade.style.background = 'rgba(56, 189, 248, 0.2)';
         btnPauseArcade.style.color = '#ffffff';
-        btnPauseArcade.style.boxShadow = '0 0 14px rgba(0, 240, 255, 0.5)';
+        btnPauseArcade.style.boxShadow = '0 0 12px rgba(56, 189, 248, 0.35)';
 
         btnPauseSim.style.borderColor = 'transparent';
         btnPauseSim.style.background = 'transparent';
         btnPauseSim.style.color = '#64748b';
         btnPauseSim.style.boxShadow = 'none';
       } else {
-        // Flight Sim active: glowing cyan border & background
-        btnPauseSim.style.borderColor = '#00f0ff';
-        btnPauseSim.style.background = 'rgba(0, 240, 255, 0.22)';
+        // Flight Sim active: soft cyan border & background
+        btnPauseSim.style.borderColor = '#38bdf8';
+        btnPauseSim.style.background = 'rgba(56, 189, 248, 0.2)';
         btnPauseSim.style.color = '#ffffff';
-        btnPauseSim.style.boxShadow = '0 0 14px rgba(0, 240, 255, 0.5)';
+        btnPauseSim.style.boxShadow = '0 0 12px rgba(56, 189, 248, 0.35)';
 
         btnPauseArcade.style.borderColor = 'transparent';
         btnPauseArcade.style.background = 'transparent';
