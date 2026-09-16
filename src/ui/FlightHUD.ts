@@ -13,9 +13,12 @@ export interface RivalMarkerDOM {
   container: HTMLDivElement;
   arrowSvg: SVGElement;
   card: HTMLDivElement;
+  pipSvg: SVGElement;
+  detailsEl: HTMLDivElement;
   nameEl: HTMLSpanElement;
   distEl: HTMLSpanElement;
   heartPips: HTMLSpanElement[];
+  isPipMode?: boolean;
 }
 
 export class FlightHUD {
@@ -1203,21 +1206,48 @@ export class FlightHUD {
       svg.innerHTML = `<polygon points="12,2 22,20 12,15 2,20" fill="${accentHex}"/>`;
       markerContainer.appendChild(svg);
 
-      // Info Badge
+      // Info Badge (Transparent Glassmorphic container: no dark background, no solid borders)
       const card = document.createElement('div');
       Object.assign(card.style, {
-        background: 'rgba(6, 12, 24, 0.85)',
-        border: `1.5px solid ${accentHex}`,
-        borderRadius: '8px',
-        padding: '4px 8px',
+        background: 'rgba(10, 20, 35, 0.35)',
+        border: '1px solid rgba(255, 255, 255, 0.18)',
+        borderRadius: '6px',
+        padding: '3px 8px',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         gap: '3px',
-        boxShadow: `0 0 12px rgba(0,0,0,0.8), 0 0 8px ${glowHex}55`,
-        backdropFilter: 'blur(6px)',
+        boxShadow: 'none',
+        backdropFilter: 'blur(2px)',
+        webkitBackdropFilter: 'blur(2px)',
         transform: 'translate(-50%, -100%)',
         whiteSpace: 'nowrap',
+        pointerEvents: 'none',
+        transition: 'opacity 0.15s ease',
+      });
+
+      // Minimalist Pip: 10x10px hollow diamond (◇) matching rival's team color
+      const pipSvg = document.createElementNS('http://www.w3.org/2000/svg', 'svg') as SVGElement;
+      pipSvg.setAttribute('width', '10');
+      pipSvg.setAttribute('height', '10');
+      pipSvg.setAttribute('viewBox', '0 0 10 10');
+      Object.assign(pipSvg.style, {
+        display: 'none',
+        filter: `drop-shadow(0 0 4px ${glowHex})`,
+        pointerEvents: 'none',
+        overflow: 'visible',
+      });
+      pipSvg.innerHTML = `<polygon points="5,1 9,5 5,9 1,5" fill="none" stroke="${accentHex}" stroke-width="1.5" stroke-opacity="0.85"/>`;
+      card.appendChild(pipSvg);
+
+      // Expanded Details (Callsign, Distance, Health)
+      const detailsEl = document.createElement('div');
+      Object.assign(detailsEl.style, {
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        gap: '3px',
+        pointerEvents: 'none',
       });
 
       // Top row: Name & Distance
@@ -1232,8 +1262,8 @@ export class FlightHUD {
       nameSpan.textContent = rival.name;
       Object.assign(nameSpan.style, {
         fontSize: '11px',
-        fontWeight: '900',
-        letterSpacing: '1px',
+        fontWeight: '800',
+        letterSpacing: '0.8px',
         color: accentHex,
         textShadow: `0 0 6px ${glowHex}`,
       });
@@ -1254,7 +1284,7 @@ export class FlightHUD {
       headerRow.appendChild(nameSpan);
       headerRow.appendChild(sepSpan);
       headerRow.appendChild(distSpan);
-      card.appendChild(headerRow);
+      detailsEl.appendChild(headerRow);
 
       // Bottom row: 10-heart mini bar
       const heartsRow = document.createElement('div');
@@ -1270,15 +1300,16 @@ export class FlightHUD {
         Object.assign(pip.style, {
           display: 'inline-block',
           width: '4px',
-          height: '5px',
+          height: '4px',
           borderRadius: '1px',
           background: '#00ff88',
-          boxShadow: '0 0 3px rgba(0, 255, 136, 0.6)',
+          boxShadow: 'none',
         });
         heartsRow.appendChild(pip);
         heartPips.push(pip);
       }
-      card.appendChild(heartsRow);
+      detailsEl.appendChild(heartsRow);
+      card.appendChild(detailsEl);
       markerContainer.appendChild(card);
       this.container.appendChild(markerContainer);
 
@@ -1286,9 +1317,12 @@ export class FlightHUD {
         container: markerContainer,
         arrowSvg: svg,
         card,
+        pipSvg,
+        detailsEl,
         nameEl: nameSpan,
         distEl: distSpan,
         heartPips,
+        isPipMode: false,
       });
     }
   }
@@ -1349,6 +1383,31 @@ export class FlightHUD {
         }
       }
 
+      // Minimalist Pip vs Full Badge based on distance
+      // When rival distance > 180m: hide callsign text and distance counter; render only sleek 10x10px hollow diamond (◇)
+      // When rival distance <= 180m: expand smoothly into compact callsign tag (font-size: 11px, no heavy borders)
+      const isDistant = distMeters > 180;
+      if (marker.isPipMode !== isDistant) {
+        marker.isPipMode = isDistant;
+        if (isDistant) {
+          marker.pipSvg.style.display = 'block';
+          marker.detailsEl.style.display = 'none';
+          marker.card.style.background = 'transparent';
+          marker.card.style.border = 'none';
+          marker.card.style.padding = '0';
+          marker.card.style.backdropFilter = 'none';
+          marker.card.style.webkitBackdropFilter = 'none';
+        } else {
+          marker.pipSvg.style.display = 'none';
+          marker.detailsEl.style.display = 'flex';
+          marker.card.style.background = 'rgba(10, 20, 35, 0.35)';
+          marker.card.style.border = '1px solid rgba(255, 255, 255, 0.18)';
+          marker.card.style.padding = '3px 8px';
+          marker.card.style.backdropFilter = 'blur(2px)';
+          marker.card.style.webkitBackdropFilter = 'blur(2px)';
+        }
+      }
+
       const isOnScreen = !isBehind && Math.abs(ndcX) <= 0.85 && Math.abs(ndcY) <= 0.85;
 
       if (isOnScreen) {
@@ -1356,11 +1415,34 @@ export class FlightHUD {
         // Clamp rival nameplates to remain at least 80px above bottom viewport edge
         const screenY = Math.min((-ndcY * 0.5 + 0.5) * window.innerHeight, window.innerHeight - 80);
 
-        marker.container.style.opacity = '1';
+        // Distance-Based LOD & Center-Screen Deadzone:
+        // Calculate normalized distance from screen center for each rival badge:
+        // dx = (screenX - window.innerWidth / 2) / (window.innerWidth / 2);
+        // dy = (screenY - window.innerHeight / 2) / (window.innerHeight / 2);
+        // centerDist = Math.hypot(dx, dy); // 0.0 at screen center, ~1.4 at screen corners
+        const dx = (screenX - halfW) / halfW;
+        const dy = (screenY - halfH) / halfH;
+        const centerDist = Math.hypot(dx, dy);
+
+        // Dynamic Opacity / Center Fade:
+        // - If centerDist < 0.35 (in the central targeting/aiming cone where gates appear):
+        //   fade the badge opacity down smoothly to 0.2.
+        // - As centerDist increases toward the periphery: scale opacity back up to 0.75.
+        let badgeOpacity: number;
+        if (centerDist < 0.35) {
+          const factor = Math.max(0, centerDist / 0.35);
+          badgeOpacity = 0.2 + 0.2 * factor; // 0.2 at center, 0.4 at edge of cone
+        } else {
+          const factor = Math.min(1.0, (centerDist - 0.35) / 0.65);
+          badgeOpacity = 0.4 + 0.35 * factor; // 0.4 at cone edge, scaling to 0.75 toward periphery
+        }
+
+        marker.container.style.opacity = badgeOpacity.toFixed(3);
         marker.container.style.left = `${screenX}px`;
         marker.container.style.top = `${screenY}px`;
         marker.arrowSvg.style.display = 'none';
-        marker.card.style.transform = 'translate(-50%, -100%)';
+        marker.card.style.display = 'flex';
+        marker.card.style.transform = isDistant ? 'translate(-50%, -50%)' : 'translate(-50%, -100%)';
       } else {
         const len = Math.sqrt(ndcX * ndcX + ndcY * ndcY) || 1;
         const dirX = ndcX / len;
@@ -1377,15 +1459,15 @@ export class FlightHUD {
         // Clamp off-screen indicator to remain at least 80px above bottom viewport edge
         const screenY = Math.min(halfH - dirY * scale, window.innerHeight - 80);
 
-        marker.container.style.opacity = '1';
+        marker.container.style.opacity = '0.75';
         marker.container.style.left = `${screenX}px`;
         marker.container.style.top = `${screenY}px`;
         marker.arrowSvg.style.display = 'block';
+        marker.card.style.display = 'none';
 
         const angleRad = Math.atan2(-dirY, dirX);
         const angleDeg = (angleRad * 180) / Math.PI + 90;
         marker.arrowSvg.style.transform = `rotate(${angleDeg}deg) scale(0.9)`;
-        marker.card.style.transform = 'translate(-50%, -50%)';
       }
     }
   }
