@@ -1115,6 +1115,17 @@ export class FlightHUD {
     }
   }
 
+  public attachMusicButton(btn: HTMLElement): void {
+    if (this.headerRightEl && btn) {
+      const pauseBtn = this.headerRightEl.querySelector('.pause-hud-trigger, #hud-pause-btn');
+      if (pauseBtn) {
+        this.headerRightEl.insertBefore(btn, pauseBtn);
+      } else {
+        this.headerRightEl.appendChild(btn);
+      }
+    }
+  }
+
   public attachPauseButton(btn: HTMLElement): void {
     if (this.headerRightEl && btn) {
       this.headerRightEl.appendChild(btn);

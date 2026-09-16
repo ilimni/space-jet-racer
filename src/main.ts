@@ -17,6 +17,7 @@ import { GameState } from './core/GameState';
 import { MenuUI } from './ui/MenuUI';
 import { HangarUI } from './ui/HangarUI';
 import { RaceDirector } from './core/RaceDirector';
+import { MusicDirector } from './audio/MusicDirector';
 
 // 1. Initialize Core Engine, Jet & Game State
 const engine = new Engine();
@@ -24,6 +25,7 @@ const jet = new Jet();
 engine.scene.add(jet.mesh);
 
 const gameState = new GameState('TITLE_SCREEN');
+const musicDirector = new MusicDirector();
 
 // 2. Initialize Flight Systems & HUD
 const inputManager = new InputManager();
@@ -95,6 +97,7 @@ const unlockAllAudio = () => {
   weaponSystem.resumeAudio();
   trackManager.resumeAudio();
   raceDirector.resumeAudio();
+  musicDirector.resumeAudio();
 };
 
 const startNewRace = (callsign: string) => {
@@ -144,14 +147,22 @@ const menuUI = new MenuUI(gameState, {
   onAudioUnlock: () => {
     unlockAllAudio();
   },
+  onToggleMusic: () => {
+    return musicDirector.toggleMute();
+  },
 }, inputManager);
+
+musicDirector.onMuteChange = (muted) => {
+  menuUI.updateMusicUI(muted);
+};
 
 hud.setPilotCallsign(menuUI.getPilotCallsign());
 
-// Dock ?debug=true FPS monitor and PAUSE button side-by-side into top-right header
+// Dock ?debug=true FPS monitor, MUSIC toggle, and PAUSE button side-by-side into top-right header
 if (engine.fpsOverlay) {
   hud.attachFpsOverlay(engine.fpsOverlay);
 }
+hud.attachMusicButton(menuUI.musicBtn);
 hud.attachPauseButton(menuUI.pauseBtn);
 
 // Wire Victory Podium and Finish Line Event
@@ -169,7 +180,7 @@ hud.onPodiumRestart = () => {
   startNewRace(menuUI.getPilotCallsign());
 };
 
-// Technical Safeguard 3: Transition listener to snap ChaseCamera cleanly
+// Technical Safeguard 3: Transition listener to snap ChaseCamera cleanly and manage music tracks
 gameState.onStateChange((newState) => {
   if (newState === 'COUNTDOWN') {
     chaseCamera.snapToTarget();
@@ -178,6 +189,17 @@ gameState.onStateChange((newState) => {
     hangarUI.show();
   } else {
     hangarUI.hide();
+  }
+
+  // Procedural Synthwave Music Transitions
+  if (newState === 'HANGAR' || newState === 'START' || newState === 'TITLE_SCREEN') {
+    musicDirector.transitionTo('MENU');
+  } else if (newState === 'COUNTDOWN' || newState === 'RACING') {
+    musicDirector.transitionTo('RACING');
+  } else if (newState === 'PAUSED') {
+    musicDirector.transitionTo('PAUSED');
+  } else if (newState === 'PODIUM') {
+    musicDirector.transitionTo('PODIUM');
   }
 });
 

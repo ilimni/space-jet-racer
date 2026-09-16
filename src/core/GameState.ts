@@ -1,5 +1,6 @@
 export type GameStateType =
   | 'TITLE_SCREEN'
+  | 'START'
   | 'HANGAR'
   | 'COUNTDOWN'
   | 'RACING'
@@ -53,6 +54,6 @@ export class GameState {
   }
 
   public isInMenu(): boolean {
-    return this.currentState === 'TITLE_SCREEN' || this.currentState === 'HANGAR';
+    return this.currentState === 'TITLE_SCREEN' || this.currentState === 'START' || this.currentState === 'HANGAR';
   }
 }

@@ -8,6 +8,7 @@ export interface MenuUICallbacks {
   onRestartRace: () => void;
   onQuitToTitle: () => void;
   onAudioUnlock: () => void;
+  onToggleMusic?: () => boolean;
 }
 
 export class MenuUI {
@@ -15,6 +16,7 @@ export class MenuUI {
   private titleOverlay: HTMLDivElement;
   private pauseOverlay: HTMLDivElement;
   public pauseBtn: HTMLButtonElement;
+  public musicBtn: HTMLButtonElement;
   private callsignInput: HTMLInputElement;
 
   private gameState: GameState;
@@ -48,7 +50,13 @@ export class MenuUI {
 
     this.titleOverlay.innerHTML = `
       <div class="menu-modal-card">
-        <div class="title-badge">INTERSTELLAR GP • COMBAT SIMULATOR</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div class="title-badge" style="margin-bottom: 0;">INTERSTELLAR GP • COMBAT SIMULATOR</div>
+          <button id="btn-title-music" class="menu-audio-pill" type="button" title="Toggle Synthwave Music">
+            <span class="music-icon">🔊</span>
+            <span class="music-label">MUSIC</span>
+          </button>
+        </div>
         <h1 class="game-logo">HYPERION<span class="logo-accent"> VOID RACER</span></h1>
         <p class="subtitle-text">HIGH-VELOCITY 3D SPACE FLIGHT • NEON ASTEROID BELT CIRCUIT</p>
 
@@ -92,6 +100,16 @@ export class MenuUI {
     this.pauseBtn.innerHTML = `<span>&#10074;&#10074;</span><span>PAUSE</span>`;
     this.pauseBtn.style.display = 'none';
 
+    // 2b. Create In-Game Music Toggle Button (🔊 / 🔇)
+    this.musicBtn = document.createElement('button');
+    this.musicBtn.id = 'hud-music-btn';
+    this.musicBtn.className = 'music-hud-trigger';
+    const isMuted = localStorage.getItem('hyperion_music_muted') === 'true';
+    this.musicBtn.innerHTML = isMuted ? '🔇' : '🔊';
+    this.musicBtn.setAttribute('title', isMuted ? 'Unmute Synthwave Music' : 'Mute Synthwave Music');
+    this.musicBtn.setAttribute('aria-label', 'Toggle Music');
+    this.musicBtn.style.display = 'none';
+
     // 3. Create Pause Menu Overlay
     this.pauseOverlay = document.createElement('div');
     this.pauseOverlay.className = 'menu-screen-backdrop';
@@ -100,7 +118,13 @@ export class MenuUI {
 
     this.pauseOverlay.innerHTML = `
       <div class="menu-modal-card pause-card">
-        <div class="pause-badge">TACTICAL SYSTEM PAUSED</div>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px;">
+          <div class="pause-badge" style="margin-bottom: 0;">TACTICAL SYSTEM PAUSED</div>
+          <button id="btn-pause-music" class="menu-audio-pill" type="button" title="Toggle Synthwave Music">
+            <span class="music-icon">🔊</span>
+            <span class="music-label">MUSIC</span>
+          </button>
+        </div>
         <h2 class="pause-heading">MISSION SUSPENDED</h2>
         <p class="subtitle-text">ORBITAL TIME &amp; TELEMETRY TEMPORARILY FROZEN</p>
 
@@ -132,6 +156,7 @@ export class MenuUI {
 
     this.container.appendChild(this.titleOverlay);
     this.container.appendChild(this.pauseOverlay);
+    this.container.appendChild(this.musicBtn);
     this.container.appendChild(this.pauseBtn);
     document.body.appendChild(this.container);
 
@@ -451,6 +476,63 @@ export class MenuUI {
         border-color: #38bdf8;
         box-shadow: 0 0 16px rgba(56, 189, 248, 0.35);
       }
+
+      /* In-Game Floating Music Button */
+      .music-hud-trigger {
+        position: relative;
+        background: rgba(15, 23, 42, 0.8);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        border-radius: 8px;
+        padding: 6px 11px;
+        color: #38bdf8;
+        font-size: 13px;
+        font-weight: 800;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        white-space: nowrap;
+        cursor: pointer;
+        pointer-events: auto;
+        backdrop-filter: blur(8px);
+        -webkit-backdrop-filter: blur(8px);
+        box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+        transition: background 0.2s, border-color 0.2s, box-shadow 0.2s, transform 0.15s ease;
+        user-select: none;
+      }
+
+      .music-hud-trigger:hover {
+        background: rgba(30, 41, 59, 0.95);
+        border-color: #38bdf8;
+        box-shadow: 0 0 16px rgba(56, 189, 248, 0.4);
+        transform: translateY(-1px);
+      }
+
+      .music-hud-trigger:active {
+        transform: translateY(1px);
+      }
+
+      /* Compact Overlay Audio Toggle Pill */
+      .menu-audio-pill {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(56, 189, 248, 0.25);
+        border-radius: 20px;
+        padding: 4px 12px;
+        color: #38bdf8;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+      }
+
+      .menu-audio-pill:hover {
+        background: rgba(30, 41, 59, 0.9);
+        border-color: #38bdf8;
+        box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
+      }
     `;
     document.head.appendChild(styleEl);
   }
@@ -481,6 +563,36 @@ export class MenuUI {
       if (this.gameState.current === 'RACING' || this.gameState.current === 'COUNTDOWN') {
         this.gameState.setState('PAUSED');
       }
+    });
+
+    // Music Toggle Action
+    const toggleMusic = () => {
+      let isMuted: boolean;
+      if (this.callbacks.onToggleMusic) {
+        isMuted = this.callbacks.onToggleMusic();
+      } else {
+        const cur = localStorage.getItem('hyperion_music_muted') === 'true';
+        isMuted = !cur;
+        localStorage.setItem('hyperion_music_muted', String(isMuted));
+      }
+      this.updateMusicUI(isMuted);
+    };
+
+    this.musicBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMusic();
+    });
+
+    const titleMusicBtn = this.titleOverlay.querySelector('#btn-title-music');
+    titleMusicBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMusic();
+    });
+
+    const pauseMusicBtn = this.pauseOverlay.querySelector('#btn-pause-music');
+    pauseMusicBtn?.addEventListener('click', (e) => {
+      e.stopPropagation();
+      toggleMusic();
     });
 
     // PAUSE MENU - RESUME Button
@@ -533,6 +645,29 @@ export class MenuUI {
     });
   }
 
+  public updateMusicUI(isMuted: boolean): void {
+    if (this.musicBtn) {
+      this.musicBtn.innerHTML = isMuted ? '🔇' : '🔊';
+      this.musicBtn.setAttribute('title', isMuted ? 'Unmute Synthwave Music' : 'Mute Synthwave Music');
+      this.musicBtn.style.borderColor = isMuted ? 'rgba(239, 68, 68, 0.4)' : 'rgba(56, 189, 248, 0.25)';
+      this.musicBtn.style.color = isMuted ? '#f87171' : '#38bdf8';
+    }
+    const titleMusicBtn = this.titleOverlay.querySelector('#btn-title-music');
+    if (titleMusicBtn) {
+      const icon = titleMusicBtn.querySelector('.music-icon');
+      const label = titleMusicBtn.querySelector('.music-label');
+      if (icon) icon.textContent = isMuted ? '🔇' : '🔊';
+      if (label) label.textContent = isMuted ? 'MUTED' : 'MUSIC';
+    }
+    const pauseMusicBtn = this.pauseOverlay.querySelector('#btn-pause-music');
+    if (pauseMusicBtn) {
+      const icon = pauseMusicBtn.querySelector('.music-icon');
+      const label = pauseMusicBtn.querySelector('.music-label');
+      if (icon) icon.textContent = isMuted ? '🔇' : '🔊';
+      if (label) label.textContent = isMuted ? 'MUTED' : 'MUSIC';
+    }
+  }
+
   private updatePausePitchToggle(): void {
     const isInverted = this.inputManager ? this.inputManager.isPitchInverted : false;
     const btnPauseArcade = this.pauseOverlay.querySelector('#btn-pause-pitch-arcade') as HTMLButtonElement;
@@ -570,27 +705,33 @@ export class MenuUI {
       this.titleOverlay.style.display = 'flex';
       this.pauseOverlay.style.display = 'none';
       this.pauseBtn.style.display = 'none';
+      this.musicBtn.style.display = 'none';
     } else if (state === 'HANGAR') {
       this.titleOverlay.style.display = 'none';
       this.pauseOverlay.style.display = 'none';
       this.pauseBtn.style.display = 'none';
+      this.musicBtn.style.display = 'none';
     } else if (state === 'COUNTDOWN') {
       this.titleOverlay.style.display = 'none';
       this.pauseOverlay.style.display = 'none';
       this.pauseBtn.style.display = 'flex';
+      this.musicBtn.style.display = 'flex';
     } else if (state === 'RACING') {
       this.titleOverlay.style.display = 'none';
       this.pauseOverlay.style.display = 'none';
       this.pauseBtn.style.display = 'flex';
+      this.musicBtn.style.display = 'flex';
     } else if (state === 'PAUSED') {
       this.titleOverlay.style.display = 'none';
       this.pauseOverlay.style.display = 'flex';
       this.pauseBtn.style.display = 'none';
+      this.musicBtn.style.display = 'none';
       this.updatePausePitchToggle();
     } else if (state === 'PODIUM') {
       this.titleOverlay.style.display = 'none';
       this.pauseOverlay.style.display = 'none';
       this.pauseBtn.style.display = 'none';
+      this.musicBtn.style.display = 'none';
     }
   }
 
