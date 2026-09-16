@@ -540,38 +540,65 @@ export class FlightHUD {
     // Mobile Gyroscope Button
     this.gyroBtn = document.createElement('button');
     this.gyroBtn.id = 'hud-gyro-btn';
-    this.gyroBtn.innerText = 'TILT';
+    this.gyroBtn.innerText = '[ 📱 ENABLE TILT ]';
     Object.assign(this.gyroBtn.style, {
-      padding: '5px 10px',
-      background: 'rgba(10, 15, 25, 0.75)',
-      border: '1px solid rgba(255, 85, 0, 0.5)',
+      padding: '5px 12px',
+      background: 'rgba(10, 15, 25, 0.85)',
+      border: '1.5px solid rgba(255, 119, 34, 0.65)',
       borderRadius: '8px',
       fontSize: '11px',
-      fontWeight: '700',
+      fontWeight: '800',
       letterSpacing: '1px',
       color: '#ff7722',
       cursor: 'pointer',
-      display: 'none',
+      display: 'inline-flex',
+      alignItems: 'center',
+      justifyContent: 'center',
       backdropFilter: 'blur(8px)',
       webkitBackdropFilter: 'blur(8px)',
       whiteSpace: 'nowrap',
+      transition: 'all 0.2s ease',
+      boxShadow: '0 0 12px rgba(255, 119, 34, 0.35)',
     });
+
+    const updateGyroBtnUI = () => {
+      if (this.inputManager.isGyroActive) {
+        this.gyroBtn.innerText = '🎯 RE-CALIBRATE';
+        this.gyroBtn.style.borderColor = 'rgba(0, 240, 255, 0.75)';
+        this.gyroBtn.style.color = '#00f0ff';
+        this.gyroBtn.style.background = 'rgba(10, 25, 45, 0.9)';
+        this.gyroBtn.style.boxShadow = '0 0 16px rgba(0, 240, 255, 0.5)';
+      } else {
+        this.gyroBtn.innerText = '[ 📱 ENABLE TILT ]';
+        this.gyroBtn.style.borderColor = 'rgba(255, 119, 34, 0.65)';
+        this.gyroBtn.style.color = '#ff7722';
+        this.gyroBtn.style.background = 'rgba(10, 15, 25, 0.85)';
+        this.gyroBtn.style.boxShadow = '0 0 12px rgba(255, 119, 34, 0.35)';
+      }
+    };
 
     this.gyroBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
       if (!this.inputManager.isGyroActive) {
         const granted = await this.inputManager.requestGyroPermission();
         if (granted) {
-          this.gyroBtn.innerText = 'RE-CENTER';
-          this.gyroBtn.style.borderColor = 'rgba(0, 240, 255, 0.6)';
-          this.gyroBtn.style.color = '#00f0ff';
+          updateGyroBtnUI();
         } else {
           this.gyroBtn.innerText = 'TILT N/A';
+          setTimeout(() => updateGyroBtnUI(), 2000);
         }
       } else {
+        // Quick one-tap re-calibration!
         this.inputManager.calibrateNeutral();
+        this.gyroBtn.innerText = '✓ CALIBRATED!';
+        setTimeout(() => updateGyroBtnUI(), 800);
       }
     });
+
+    this.inputManager.addGyroListener(() => {
+      updateGyroBtnUI();
+    });
+
     this.headerRightEl.appendChild(this.gyroBtn);
 
     this.headerContainerEl.appendChild(this.headerRightEl);

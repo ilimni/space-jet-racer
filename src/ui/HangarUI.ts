@@ -75,6 +75,7 @@ export class HangarUI {
 
     // Top-left compact branding badge
     const header = document.createElement('div');
+    header.className = 'hangar-header-badge';
     Object.assign(header.style, {
       position: 'absolute',
       top: '24px',
@@ -96,13 +97,15 @@ export class HangarUI {
 
     // Floating right side panel for controls
     const sidePanel = document.createElement('div');
+    sidePanel.className = 'hangar-side-panel';
     Object.assign(sidePanel.style, {
       position: 'absolute',
       top: '20px',
       bottom: '20px',
       right: '24px',
-      width: '360px',
-      maxWidth: 'calc(100vw - 48px)',
+      width: 'min(380px, 92vw)',
+      maxHeight: '88dvh',
+      maxWidth: 'calc(100vw - 32px)',
       padding: '24px',
       background: 'rgba(8, 14, 28, 0.85)',
       border: '1.5px solid rgba(0, 240, 255, 0.35)',
@@ -116,6 +119,8 @@ export class HangarUI {
       gap: '16px',
       pointerEvents: 'auto',
       overflowY: 'auto',
+      overscrollBehavior: 'contain',
+      webkitOverflowScrolling: 'touch',
       boxSizing: 'border-box',
     });
 

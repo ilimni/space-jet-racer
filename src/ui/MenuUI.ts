@@ -89,6 +89,9 @@ export class MenuUI {
             <div class="briefing-item"><span class="key-pill">ESC / P</span> Pause</div>
           </div>
           <div class="mobile-hint">&#128241; Mobile: On-Screen Virtual Stick + Gyro Tilt + Multi-Touch Buttons</div>
+          <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center;">
+            <button id="btn-title-tilt" class="menu-tilt-btn" type="button">[ 📱 ENABLE TILT ]</button>
+          </div>
         </div>
       </div>
     `;
@@ -129,12 +132,22 @@ export class MenuUI {
         <p class="subtitle-text">ORBITAL TIME &amp; TELEMETRY TEMPORARILY FROZEN</p>
 
         <!-- Pitch Axis Setting in Pause Menu -->
-        <div class="pause-settings-card" style="margin: 16px 0; padding: 12px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 14px; text-align: left;">
-          <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #38bdf8; text-transform: uppercase; margin-bottom: 8px;">PITCH AXIS DYNAMICS</div>
+        <div class="pause-settings-card" style="margin: 12px 0 8px 0; padding: 10px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 14px; text-align: left;">
+          <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px;">PITCH AXIS DYNAMICS</div>
           <div class="pitch-toggle-group" style="display: flex; gap: 8px; background: rgba(11, 18, 33, 0.85); padding: 4px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.18);">
-            <button id="btn-pause-pitch-arcade" style="flex: 1; padding: 9px 8px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">ARCADE</button>
-            <button id="btn-pause-pitch-sim" style="flex: 1; padding: 9px 8px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">FLIGHT SIM</button>
+            <button id="btn-pause-pitch-arcade" style="flex: 1; padding: 8px 6px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">ARCADE</button>
+            <button id="btn-pause-pitch-sim" style="flex: 1; padding: 8px 6px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">FLIGHT SIM</button>
           </div>
+        </div>
+
+        <!-- Touch & Motion Controls in Pause Menu -->
+        <div class="pause-settings-card" style="margin: 8px 0 14px 0; padding: 10px 14px; background: rgba(15, 23, 42, 0.7); border: 1px solid rgba(56, 189, 248, 0.2); border-radius: 14px; text-align: left;">
+          <div style="font-size: 10px; font-weight: 800; letter-spacing: 1.5px; color: #38bdf8; text-transform: uppercase; margin-bottom: 6px;">TOUCH JOYSTICK &amp; TILT</div>
+          <div class="joystick-toggle-group" style="display: flex; gap: 8px; margin-bottom: 8px; background: rgba(11, 18, 33, 0.85); padding: 4px; border-radius: 10px; border: 1px solid rgba(56, 189, 248, 0.18);">
+            <button id="btn-pause-joy-floating" style="flex: 1; padding: 8px 6px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">FLOATING STICK</button>
+            <button id="btn-pause-joy-static" style="flex: 1; padding: 8px 6px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">STATIC STICK</button>
+          </div>
+          <button id="btn-pause-tilt" class="menu-tilt-btn" style="width: 100%; box-sizing: border-box;" type="button">[ 📱 ENABLE TILT ]</button>
         </div>
 
         <div class="btn-group pause-btn-stack">
@@ -163,6 +176,9 @@ export class MenuUI {
     this.callsignInput = this.titleOverlay.querySelector('#callsign-input') as HTMLInputElement;
 
     this.bindEvents();
+    this.updatePausePitchToggle();
+    this.updateJoystickToggleUI();
+    this.updateTiltButtonsUI();
     this.syncState(this.gameState.current);
 
     this.gameState.onStateChange((newState) => {
@@ -192,14 +208,17 @@ export class MenuUI {
       }
 
       .menu-modal-card {
-        background: rgba(15, 23, 42, 0.8);
-        border: 1px solid rgba(56, 189, 248, 0.2);
+        background: rgba(15, 23, 42, 0.88);
+        border: 1px solid rgba(56, 189, 248, 0.25);
         backdrop-filter: blur(14px);
         -webkit-backdrop-filter: blur(14px);
         border-radius: 16px;
-        padding: 32px 40px;
-        width: 90%;
-        max-width: 540px;
+        padding: 24px 32px;
+        width: min(520px, 92vw);
+        max-height: 88dvh;
+        overflow-y: auto;
+        overscroll-behavior: contain;
+        -webkit-overflow-scrolling: touch;
         box-shadow: 0 16px 40px rgba(0, 0, 0, 0.6), inset 0 1px 0 rgba(255, 255, 255, 0.05);
         text-align: center;
         color: #e2e8f0;
@@ -533,6 +552,37 @@ export class MenuUI {
         border-color: #38bdf8;
         box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
       }
+
+      /* Tilt & Motion Controls Buttons */
+      .menu-tilt-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 6px;
+        background: rgba(15, 23, 42, 0.7);
+        border: 1px solid rgba(56, 189, 248, 0.35);
+        border-radius: 8px;
+        padding: 8px 16px;
+        color: #38bdf8;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: 1px;
+        cursor: pointer;
+        transition: all 0.15s ease;
+      }
+
+      .menu-tilt-btn:hover {
+        background: rgba(30, 41, 59, 0.9);
+        border-color: #38bdf8;
+        box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+      }
+
+      .menu-tilt-btn.active {
+        background: rgba(34, 197, 94, 0.2);
+        border-color: #22c55e;
+        color: #4ade80;
+        box-shadow: 0 0 14px rgba(34, 197, 94, 0.35);
+      }
     `;
     document.head.appendChild(styleEl);
   }
@@ -633,6 +683,61 @@ export class MenuUI {
       this.updatePausePitchToggle();
     });
 
+    // PAUSE MENU - Joystick Mode Toggle Buttons
+    const btnJoyFloat = this.pauseOverlay.querySelector('#btn-pause-joy-floating') as HTMLButtonElement;
+    const btnJoyStatic = this.pauseOverlay.querySelector('#btn-pause-joy-static') as HTMLButtonElement;
+
+    btnJoyFloat?.addEventListener('click', () => {
+      this.inputManager?.setJoystickMode('floating');
+      this.updateJoystickToggleUI();
+    });
+
+    btnJoyStatic?.addEventListener('click', () => {
+      this.inputManager?.setJoystickMode('static');
+      this.updateJoystickToggleUI();
+    });
+
+    // Tilt Control Buttons (Title and Pause Menus)
+    const handleTiltClick = async (btn: HTMLButtonElement) => {
+      if (!this.inputManager) return;
+      if (!this.inputManager.isGyroActive) {
+        const granted = await this.inputManager.requestGyroPermission();
+        if (granted) {
+          this.updateTiltButtonsUI();
+        } else {
+          btn.innerHTML = '❌ TILT UNAVAILABLE';
+          setTimeout(() => {
+            this.updateTiltButtonsUI();
+          }, 1500);
+        }
+      } else {
+        this.inputManager.calibrateNeutral();
+        btn.innerHTML = '✓ CALIBRATED!';
+        setTimeout(() => {
+          this.updateTiltButtonsUI();
+        }, 800);
+      }
+    };
+
+    const titleTiltBtn = this.titleOverlay.querySelector('#btn-title-tilt') as HTMLButtonElement;
+    titleTiltBtn?.addEventListener('click', () => {
+      if (titleTiltBtn) handleTiltClick(titleTiltBtn);
+    });
+
+    const pauseTiltBtn = this.pauseOverlay.querySelector('#btn-pause-tilt') as HTMLButtonElement;
+    pauseTiltBtn?.addEventListener('click', () => {
+      if (pauseTiltBtn) handleTiltClick(pauseTiltBtn);
+    });
+
+    if (this.inputManager) {
+      this.inputManager.addGyroListener(() => {
+        this.updateTiltButtonsUI();
+      });
+      this.inputManager.addJoystickModeListener(() => {
+        this.updateJoystickToggleUI();
+      });
+    }
+
     // Keyboard shortcut (Escape or 'P') to toggle pause
     window.addEventListener('keydown', (e) => {
       if (e.key === 'Escape' || e.key === 'p' || e.key === 'P') {
@@ -700,12 +805,63 @@ export class MenuUI {
     }
   }
 
+  private updateJoystickToggleUI(): void {
+    const isStatic = this.inputManager?.isStaticJoystick ?? false;
+    const btnJoyFloat = this.pauseOverlay.querySelector('#btn-pause-joy-floating') as HTMLButtonElement;
+    const btnJoyStatic = this.pauseOverlay.querySelector('#btn-pause-joy-static') as HTMLButtonElement;
+
+    if (btnJoyFloat && btnJoyStatic) {
+      if (!isStatic) {
+        btnJoyFloat.style.borderColor = '#38bdf8';
+        btnJoyFloat.style.background = 'rgba(56, 189, 248, 0.2)';
+        btnJoyFloat.style.color = '#ffffff';
+        btnJoyFloat.style.boxShadow = '0 0 12px rgba(56, 189, 248, 0.35)';
+
+        btnJoyStatic.style.borderColor = 'transparent';
+        btnJoyStatic.style.background = 'transparent';
+        btnJoyStatic.style.color = '#64748b';
+        btnJoyStatic.style.boxShadow = 'none';
+      } else {
+        btnJoyStatic.style.borderColor = '#38bdf8';
+        btnJoyStatic.style.background = 'rgba(56, 189, 248, 0.2)';
+        btnJoyStatic.style.color = '#ffffff';
+        btnJoyStatic.style.boxShadow = '0 0 12px rgba(56, 189, 248, 0.35)';
+
+        btnJoyFloat.style.borderColor = 'transparent';
+        btnJoyFloat.style.background = 'transparent';
+        btnJoyFloat.style.color = '#64748b';
+        btnJoyFloat.style.boxShadow = 'none';
+      }
+    }
+  }
+
+  public updateTiltButtonsUI(): void {
+    const isGyroActive = this.inputManager?.isGyroActive ?? false;
+    const titleTiltBtn = this.titleOverlay.querySelector('#btn-title-tilt') as HTMLButtonElement;
+    const pauseTiltBtn = this.pauseOverlay.querySelector('#btn-pause-tilt') as HTMLButtonElement;
+
+    const applyState = (btn: HTMLButtonElement | null) => {
+      if (!btn) return;
+      if (isGyroActive) {
+        btn.innerHTML = '🎯 RE-CALIBRATE TILT';
+        btn.classList.add('active');
+      } else {
+        btn.innerHTML = '[ 📱 ENABLE TILT ]';
+        btn.classList.remove('active');
+      }
+    };
+
+    applyState(titleTiltBtn);
+    applyState(pauseTiltBtn);
+  }
+
   public syncState(state: string): void {
     if (state === 'TITLE_SCREEN') {
       this.titleOverlay.style.display = 'flex';
       this.pauseOverlay.style.display = 'none';
       this.pauseBtn.style.display = 'none';
       this.musicBtn.style.display = 'none';
+      this.updateTiltButtonsUI();
     } else if (state === 'HANGAR') {
       this.titleOverlay.style.display = 'none';
       this.pauseOverlay.style.display = 'none';
@@ -727,6 +883,8 @@ export class MenuUI {
       this.pauseBtn.style.display = 'none';
       this.musicBtn.style.display = 'none';
       this.updatePausePitchToggle();
+      this.updateJoystickToggleUI();
+      this.updateTiltButtonsUI();
     } else if (state === 'PODIUM') {
       this.titleOverlay.style.display = 'none';
       this.pauseOverlay.style.display = 'none';
