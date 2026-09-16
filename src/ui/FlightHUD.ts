@@ -29,6 +29,7 @@ export class FlightHUD {
   private boostPercentEl!: HTMLElement;
   private inputBadgeEl!: HTMLElement;
   private gyroBtn!: HTMLButtonElement;
+  private calibrateBtn!: HTMLButtonElement;
   private inputManager: InputManager;
 
   // Checkpoint Tracker, Rank Badge & Race Timer
@@ -540,19 +541,20 @@ export class FlightHUD {
     this.inputBadgeEl.innerHTML = `<span style="display:inline-block;width:6px;height:6px;border-radius:50%;background:#00f0ff;"></span><span id="hud-mode-text">KEYBOARD</span>`;
     this.headerRightEl.appendChild(this.inputBadgeEl);
 
-    // Mobile Gyroscope Button
+    // Mobile Gyroscope Button (Clean Sci-Fi aesthetic)
     this.gyroBtn = document.createElement('button');
     this.gyroBtn.id = 'hud-gyro-btn';
-    this.gyroBtn.innerText = '[ 📱 ENABLE TILT ]';
+    this.gyroBtn.innerText = 'GYRO STEERING: [ OFF ]';
     Object.assign(this.gyroBtn.style, {
       padding: '5px 12px',
-      background: 'rgba(10, 15, 25, 0.85)',
-      border: '1.5px solid rgba(255, 119, 34, 0.65)',
+      background: 'rgba(15, 23, 42, 0.75)',
+      border: '1px solid rgba(56, 189, 248, 0.3)',
       borderRadius: '8px',
       fontSize: '11px',
-      fontWeight: '800',
-      letterSpacing: '1px',
-      color: '#ff7722',
+      fontFamily: 'monospace',
+      fontWeight: '700',
+      letterSpacing: '1.5px',
+      color: '#94a3b8',
       cursor: 'pointer',
       display: 'inline-flex',
       alignItems: 'center',
@@ -561,41 +563,77 @@ export class FlightHUD {
       webkitBackdropFilter: 'blur(8px)',
       whiteSpace: 'nowrap',
       transition: 'all 0.2s ease',
-      boxShadow: '0 0 12px rgba(255, 119, 34, 0.35)',
+      boxShadow: 'none',
+      userSelect: 'none',
+    });
+
+    // Secondary compact [ CALIBRATE ZERO ] button
+    this.calibrateBtn = document.createElement('button');
+    this.calibrateBtn.id = 'hud-calibrate-btn';
+    this.calibrateBtn.innerText = '[ CALIBRATE ZERO ]';
+    Object.assign(this.calibrateBtn.style, {
+      padding: '5px 10px',
+      background: 'rgba(15, 23, 42, 0.75)',
+      border: '1px solid rgba(56, 189, 248, 0.3)',
+      borderRadius: '8px',
+      fontSize: '11px',
+      fontFamily: 'monospace',
+      fontWeight: '700',
+      letterSpacing: '1.5px',
+      color: '#38bdf8',
+      cursor: 'pointer',
+      display: 'none',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backdropFilter: 'blur(8px)',
+      webkitBackdropFilter: 'blur(8px)',
+      whiteSpace: 'nowrap',
+      transition: 'all 0.2s ease',
+      boxShadow: 'none',
+      userSelect: 'none',
     });
 
     const updateGyroBtnUI = () => {
-      if (this.inputManager.isGyroActive) {
-        this.gyroBtn.innerText = '🎯 RE-CALIBRATE';
-        this.gyroBtn.style.borderColor = 'rgba(0, 240, 255, 0.75)';
+      if (this.inputManager.isTiltEnabled) {
+        this.gyroBtn.innerText = 'GYRO STEERING: [ ACTIVE ]';
+        this.gyroBtn.style.borderColor = '#00f0ff';
         this.gyroBtn.style.color = '#00f0ff';
-        this.gyroBtn.style.background = 'rgba(10, 25, 45, 0.9)';
-        this.gyroBtn.style.boxShadow = '0 0 16px rgba(0, 240, 255, 0.5)';
+        this.gyroBtn.style.background = 'rgba(10, 25, 45, 0.85)';
+        this.gyroBtn.style.boxShadow = '0 0 14px rgba(0, 240, 255, 0.45)';
+        this.calibrateBtn.style.display = 'inline-flex';
       } else {
-        this.gyroBtn.innerText = '[ 📱 ENABLE TILT ]';
-        this.gyroBtn.style.borderColor = 'rgba(255, 119, 34, 0.65)';
-        this.gyroBtn.style.color = '#ff7722';
-        this.gyroBtn.style.background = 'rgba(10, 15, 25, 0.85)';
-        this.gyroBtn.style.boxShadow = '0 0 12px rgba(255, 119, 34, 0.35)';
+        this.gyroBtn.innerText = 'GYRO STEERING: [ OFF ]';
+        this.gyroBtn.style.borderColor = 'rgba(56, 189, 248, 0.3)';
+        this.gyroBtn.style.color = '#94a3b8';
+        this.gyroBtn.style.background = 'rgba(15, 23, 42, 0.75)';
+        this.gyroBtn.style.boxShadow = 'none';
+        this.calibrateBtn.style.display = 'none';
       }
     };
 
     this.gyroBtn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      if (!this.inputManager.isGyroActive) {
-        const granted = await this.inputManager.requestGyroPermission();
+      if (!this.inputManager.isTiltEnabled) {
+        const granted = await this.inputManager.enableTilt();
         if (granted) {
           updateGyroBtnUI();
         } else {
-          this.gyroBtn.innerText = 'TILT N/A';
-          setTimeout(() => updateGyroBtnUI(), 2000);
+          this.gyroBtn.innerText = 'GYRO: [ UNAVAILABLE ]';
+          setTimeout(() => updateGyroBtnUI(), 1500);
         }
       } else {
-        // Quick one-tap re-calibration!
-        this.inputManager.calibrateNeutral();
-        this.gyroBtn.innerText = '✓ CALIBRATED!';
-        setTimeout(() => updateGyroBtnUI(), 800);
+        this.inputManager.disableTilt();
+        updateGyroBtnUI();
       }
+    });
+
+    this.calibrateBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      this.inputManager.calibrateNeutral();
+      this.calibrateBtn.innerText = '[ ZEROED ]';
+      setTimeout(() => {
+        this.calibrateBtn.innerText = '[ CALIBRATE ZERO ]';
+      }, 800);
     });
 
     this.inputManager.addGyroListener(() => {
@@ -603,6 +641,7 @@ export class FlightHUD {
     });
 
     this.headerRightEl.appendChild(this.gyroBtn);
+    this.headerRightEl.appendChild(this.calibrateBtn);
 
     this.headerContainerEl.appendChild(this.headerRightEl);
     this.container.appendChild(this.headerContainerEl);

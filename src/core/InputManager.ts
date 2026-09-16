@@ -36,11 +36,22 @@ export class InputManager {
 
   // Gyroscope / DeviceOrientation state
   public isGyroAvailable: boolean = false;
-  public isGyroActive: boolean = false;
-  public baselineBeta: number = 45; // Baseline neutral phone tilt
-  public baselineGamma: number = 0;
-  public currentBeta: number = 45;
-  public currentGamma: number = 0;
+  public isTiltEnabled: boolean = false;
+  public get isGyroActive(): boolean {
+    return this.isTiltEnabled;
+  }
+  public set isGyroActive(val: boolean) {
+    this.isTiltEnabled = val;
+  }
+
+  public baselinePitchAngle: number = 0;
+  public baselineRollAngle: number = 0;
+  public currentPitchAngle: number = 0;
+  public currentRollAngle: number = 0;
+
+  private smoothedTiltPitch: number = 0;
+  private smoothedTiltRoll: number = 0;
+
   public onGyroChange?: (active: boolean) => void;
   private gyroListeners: Array<(active: boolean) => void> = [];
 
@@ -568,19 +579,49 @@ export class InputManager {
     }
   }
 
+  public async enableTilt(): Promise<boolean> {
+    return this.requestGyroPermission();
+  }
+
+  public disableTilt(): void {
+    this.disableGyro();
+  }
+
   public enableGyro(): void {
     window.addEventListener('deviceorientation', this.handleOrientation, true);
-    this.isGyroActive = true;
+    this.isTiltEnabled = true;
     this.calibrateNeutral();
+    this.smoothedTiltPitch = 0;
+    this.smoothedTiltRoll = 0;
     this.setMode('Tilt / Gyro');
+
+    // Disable left touch zone to prevent accidental touches while tilting
+    if (this.touchZoneLeft) {
+      this.touchZoneLeft.style.pointerEvents = 'none';
+    }
+    if (this.stickBase && !this.isStaticJoystick) {
+      this.stickBase.style.opacity = '0';
+    }
+
     this.onGyroChange?.(true);
     this.gyroListeners.forEach((cb) => cb(true));
   }
 
   public disableGyro(): void {
     window.removeEventListener('deviceorientation', this.handleOrientation, true);
-    this.isGyroActive = false;
+    this.isTiltEnabled = false;
+    this.smoothedTiltPitch = 0;
+    this.smoothedTiltRoll = 0;
     this.setMode('Touch Controls');
+
+    // Re-enable touch joystick steering
+    if (this.touchZoneLeft) {
+      this.touchZoneLeft.style.pointerEvents = 'auto';
+    }
+    if (this.stickBase && this.isStaticJoystick) {
+      this.stickBase.style.opacity = '0.85';
+    }
+
     this.onGyroChange?.(false);
     this.gyroListeners.forEach((cb) => cb(false));
   }
@@ -594,13 +635,45 @@ export class InputManager {
   }
 
   public calibrateNeutral(): void {
-    this.baselineBeta = this.currentBeta;
-    this.baselineGamma = this.currentGamma;
+    this.baselinePitchAngle = this.currentPitchAngle;
+    this.baselineRollAngle = this.currentRollAngle;
+    this.smoothedTiltPitch = 0;
+    this.smoothedTiltRoll = 0;
   }
 
   private handleOrientation = (e: DeviceOrientationEvent): void => {
-    if (e.beta !== null) this.currentBeta = e.beta;
-    if (e.gamma !== null) this.currentGamma = e.gamma;
+    const beta = e.beta ?? 0;
+    const gamma = e.gamma ?? 0;
+
+    const orientationAngle = screen.orientation?.angle ?? (window.orientation as number) ?? 0;
+
+    let rawPitch = 0;
+    let rawRoll = 0;
+
+    if (orientationAngle === 90) {
+      // Landscape-Primary (90°):
+      // Forward/Back Pitch is derived from event.gamma
+      // Left/Right Roll/Turn is derived from event.beta
+      rawPitch = gamma;
+      rawRoll = beta;
+    } else if (orientationAngle === 270 || orientationAngle === -90) {
+      // Landscape-Secondary (270° / -90°):
+      // Invert both axes to match inverted holding
+      rawPitch = -gamma;
+      rawRoll = -beta;
+    } else {
+      // Portrait fallback (0° or 180°)
+      if (orientationAngle === 180) {
+        rawPitch = -beta;
+        rawRoll = -gamma;
+      } else {
+        rawPitch = beta;
+        rawRoll = gamma;
+      }
+    }
+
+    this.currentPitchAngle = rawPitch;
+    this.currentRollAngle = rawRoll;
   };
 
   // -------------------------------------------------------------
@@ -648,14 +721,33 @@ export class InputManager {
     }
 
     // 4. Gyroscope Tilt Flight Steering
-    if (this.isGyroActive) {
-      const deltaPitch = Math.min(Math.max((this.currentBeta - this.baselineBeta) / 25.0, -1), 1);
-      const deltaRoll = Math.min(Math.max((this.currentGamma - this.baselineGamma) / 30.0, -1), 1);
+    if (this.isTiltEnabled) {
+      const diffPitch = this.currentPitchAngle - this.baselinePitchAngle;
+      const diffRoll = this.currentRollAngle - this.baselineRollAngle;
 
-      // Blend with flight controls: Gyro controls pitch and banking turn when active
-      arcadePitch -= deltaPitch;
-      roll += deltaRoll;
-      yaw += deltaRoll * 0.75;
+      // Apply 2.5-degree deadzone: if Math.abs(diff) < 2.5, treat deflection as 0
+      // Scale deflection to normalized [-1.0, 1.0] range (max deflection at 25°)
+      const calcDeflection = (diff: number, deadzone = 2.5, maxDeg = 25.0): number => {
+        const absDiff = Math.abs(diff);
+        if (absDiff < deadzone) return 0;
+        const normalized = Math.min(Math.max((absDiff - deadzone) / (maxDeg - deadzone), 0), 1.0);
+        return Math.sign(diff) * normalized;
+      };
+
+      const targetPitch = calcDeflection(diffPitch);
+      const targetRoll = calcDeflection(diffRoll);
+
+      // Smooth inputs via lerp
+      this.smoothedTiltPitch += (targetPitch - this.smoothedTiltPitch) * 0.18;
+      this.smoothedTiltRoll += (targetRoll - this.smoothedTiltRoll) * 0.18;
+
+      // Route smoothed values to the jet's pitch and yaw vectors
+      arcadePitch += this.smoothedTiltPitch;
+      roll += this.smoothedTiltRoll;
+      yaw += this.smoothedTiltRoll * 0.75;
+    } else {
+      this.smoothedTiltPitch = 0;
+      this.smoothedTiltRoll = 0;
     }
 
     // Touch button overrides

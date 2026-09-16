@@ -88,9 +88,10 @@ export class MenuUI {
             <div class="briefing-item"><span class="key-pill">F / CLICK</span> Fire Plasma</div>
             <div class="briefing-item"><span class="key-pill">ESC / P</span> Pause</div>
           </div>
-          <div class="mobile-hint">&#128241; Mobile: On-Screen Virtual Stick + Gyro Tilt + Multi-Touch Buttons</div>
-          <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center;">
-            <button id="btn-title-tilt" class="menu-tilt-btn" type="button">[ 📱 ENABLE TILT ]</button>
+          <div class="mobile-hint">MOBILE: ON-SCREEN VIRTUAL STICK + GYRO TILT + MULTI-TOUCH BUTTONS</div>
+          <div style="margin-top: 10px; display: flex; gap: 8px; justify-content: center; align-items: center;">
+            <button id="btn-title-tilt" class="menu-tilt-btn" type="button">GYRO STEERING: [ OFF ]</button>
+            <button id="btn-title-calibrate" class="menu-calibrate-btn" style="display: none;" type="button">[ CALIBRATE ZERO ]</button>
           </div>
         </div>
       </div>
@@ -147,7 +148,10 @@ export class MenuUI {
             <button id="btn-pause-joy-floating" style="flex: 1; padding: 8px 6px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">FLOATING STICK</button>
             <button id="btn-pause-joy-static" style="flex: 1; padding: 8px 6px; font-size: 11px; font-weight: 800; letter-spacing: 1px; border-radius: 8px; cursor: pointer; transition: all 0.15s ease; border: 1.5px solid transparent; white-space: nowrap;">STATIC STICK</button>
           </div>
-          <button id="btn-pause-tilt" class="menu-tilt-btn" style="width: 100%; box-sizing: border-box;" type="button">[ 📱 ENABLE TILT ]</button>
+          <div style="display: flex; gap: 8px; align-items: center;">
+            <button id="btn-pause-tilt" class="menu-tilt-btn" style="flex: 1; box-sizing: border-box;" type="button">GYRO STEERING: [ OFF ]</button>
+            <button id="btn-pause-calibrate" class="menu-calibrate-btn" style="display: none;" type="button">[ CALIBRATE ZERO ]</button>
+          </div>
         </div>
 
         <div class="btn-group pause-btn-stack">
@@ -553,35 +557,66 @@ export class MenuUI {
         box-shadow: 0 0 12px rgba(56, 189, 248, 0.3);
       }
 
-      /* Tilt & Motion Controls Buttons */
+      /* Tilt & Motion Controls Buttons (Clean Sci-Fi aesthetic) */
       .menu-tilt-btn {
         display: inline-flex;
         align-items: center;
         justify-content: center;
         gap: 6px;
-        background: rgba(15, 23, 42, 0.7);
-        border: 1px solid rgba(56, 189, 248, 0.35);
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid rgba(56, 189, 248, 0.3);
         border-radius: 8px;
         padding: 8px 16px;
-        color: #38bdf8;
+        color: #94a3b8;
+        font-family: monospace;
         font-size: 11px;
-        font-weight: 800;
-        letter-spacing: 1px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
         cursor: pointer;
-        transition: all 0.15s ease;
+        transition: all 0.2s ease;
+        box-shadow: none;
+        user-select: none;
       }
 
       .menu-tilt-btn:hover {
         background: rgba(30, 41, 59, 0.9);
         border-color: #38bdf8;
-        box-shadow: 0 0 14px rgba(56, 189, 248, 0.35);
+        color: #e2e8f0;
       }
 
       .menu-tilt-btn.active {
-        background: rgba(34, 197, 94, 0.2);
-        border-color: #22c55e;
-        color: #4ade80;
-        box-shadow: 0 0 14px rgba(34, 197, 94, 0.35);
+        background: rgba(10, 25, 45, 0.85);
+        border-color: #00f0ff;
+        color: #00f0ff;
+        box-shadow: 0 0 14px rgba(0, 240, 255, 0.45);
+      }
+
+      .menu-calibrate-btn {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 4px;
+        background: rgba(15, 23, 42, 0.75);
+        border: 1px solid rgba(56, 189, 248, 0.3);
+        border-radius: 8px;
+        padding: 8px 12px;
+        color: #38bdf8;
+        font-family: monospace;
+        font-size: 11px;
+        font-weight: 700;
+        letter-spacing: 1.5px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        box-shadow: none;
+        white-space: nowrap;
+        user-select: none;
+      }
+
+      .menu-calibrate-btn:hover {
+        background: rgba(30, 41, 59, 0.9);
+        border-color: #00f0ff;
+        color: #00f0ff;
+        box-shadow: 0 0 10px rgba(0, 240, 255, 0.3);
       }
     `;
     document.head.appendChild(styleEl);
@@ -700,33 +735,49 @@ export class MenuUI {
     // Tilt Control Buttons (Title and Pause Menus)
     const handleTiltClick = async (btn: HTMLButtonElement) => {
       if (!this.inputManager) return;
-      if (!this.inputManager.isGyroActive) {
-        const granted = await this.inputManager.requestGyroPermission();
+      if (!this.inputManager.isTiltEnabled) {
+        const granted = await this.inputManager.enableTilt();
         if (granted) {
           this.updateTiltButtonsUI();
         } else {
-          btn.innerHTML = '❌ TILT UNAVAILABLE';
+          btn.innerText = 'GYRO: [ UNAVAILABLE ]';
           setTimeout(() => {
             this.updateTiltButtonsUI();
           }, 1500);
         }
       } else {
-        this.inputManager.calibrateNeutral();
-        btn.innerHTML = '✓ CALIBRATED!';
-        setTimeout(() => {
-          this.updateTiltButtonsUI();
-        }, 800);
+        this.inputManager.disableTilt();
+        this.updateTiltButtonsUI();
       }
     };
 
-    const titleTiltBtn = this.titleOverlay.querySelector('#btn-title-tilt') as HTMLButtonElement;
+    const handleCalibrateClick = (btn: HTMLButtonElement) => {
+      if (!this.inputManager) return;
+      this.inputManager.calibrateNeutral();
+      btn.innerText = '[ ZEROED ]';
+      setTimeout(() => {
+        btn.innerText = '[ CALIBRATE ZERO ]';
+      }, 800);
+    };
+
+    const titleTiltBtn = this.titleOverlay.querySelector('#btn-title-tilt') as HTMLButtonElement | null;
     titleTiltBtn?.addEventListener('click', () => {
       if (titleTiltBtn) handleTiltClick(titleTiltBtn);
     });
 
-    const pauseTiltBtn = this.pauseOverlay.querySelector('#btn-pause-tilt') as HTMLButtonElement;
+    const pauseTiltBtn = this.pauseOverlay.querySelector('#btn-pause-tilt') as HTMLButtonElement | null;
     pauseTiltBtn?.addEventListener('click', () => {
       if (pauseTiltBtn) handleTiltClick(pauseTiltBtn);
+    });
+
+    const titleCalibrateBtn = this.titleOverlay.querySelector('#btn-title-calibrate') as HTMLButtonElement | null;
+    titleCalibrateBtn?.addEventListener('click', () => {
+      if (titleCalibrateBtn) handleCalibrateClick(titleCalibrateBtn);
+    });
+
+    const pauseCalibrateBtn = this.pauseOverlay.querySelector('#btn-pause-calibrate') as HTMLButtonElement | null;
+    pauseCalibrateBtn?.addEventListener('click', () => {
+      if (pauseCalibrateBtn) handleCalibrateClick(pauseCalibrateBtn);
     });
 
     if (this.inputManager) {
@@ -836,23 +887,29 @@ export class MenuUI {
   }
 
   public updateTiltButtonsUI(): void {
-    const isGyroActive = this.inputManager?.isGyroActive ?? false;
-    const titleTiltBtn = this.titleOverlay.querySelector('#btn-title-tilt') as HTMLButtonElement;
-    const pauseTiltBtn = this.pauseOverlay.querySelector('#btn-pause-tilt') as HTMLButtonElement;
+    const isTiltEnabled = this.inputManager?.isTiltEnabled ?? false;
+    const titleTiltBtn = this.titleOverlay.querySelector('#btn-title-tilt') as HTMLButtonElement | null;
+    const pauseTiltBtn = this.pauseOverlay.querySelector('#btn-pause-tilt') as HTMLButtonElement | null;
+    const titleCalibrateBtn = this.titleOverlay.querySelector('#btn-title-calibrate') as HTMLButtonElement | null;
+    const pauseCalibrateBtn = this.pauseOverlay.querySelector('#btn-pause-calibrate') as HTMLButtonElement | null;
 
-    const applyState = (btn: HTMLButtonElement | null) => {
-      if (!btn) return;
-      if (isGyroActive) {
-        btn.innerHTML = '🎯 RE-CALIBRATE TILT';
-        btn.classList.add('active');
-      } else {
-        btn.innerHTML = '[ 📱 ENABLE TILT ]';
-        btn.classList.remove('active');
+    const applyState = (tiltBtn: HTMLButtonElement | null, calBtn: HTMLButtonElement | null) => {
+      if (tiltBtn) {
+        if (isTiltEnabled) {
+          tiltBtn.innerText = 'GYRO STEERING: [ ACTIVE ]';
+          tiltBtn.classList.add('active');
+        } else {
+          tiltBtn.innerText = 'GYRO STEERING: [ OFF ]';
+          tiltBtn.classList.remove('active');
+        }
+      }
+      if (calBtn) {
+        calBtn.style.display = isTiltEnabled ? 'inline-flex' : 'none';
       }
     };
 
-    applyState(titleTiltBtn);
-    applyState(pauseTiltBtn);
+    applyState(titleTiltBtn, titleCalibrateBtn);
+    applyState(pauseTiltBtn, pauseCalibrateBtn);
   }
 
   public syncState(state: string): void {
